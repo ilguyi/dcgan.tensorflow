@@ -154,8 +154,8 @@ def main(_):
     if not FLAGS.make_gif:
       if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
         if not FLAGS.checkpoint_step:
-          checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
-          #checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
+          #checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
+          checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
         else:
           checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
 
