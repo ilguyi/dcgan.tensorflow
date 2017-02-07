@@ -4,12 +4,13 @@
   Deep Convolutional Generative Adversarial Networks"
   Alec Radford, Luke Metz and Soumith Chintala
 
-# Author
+## Author
   Il Gu Yi
 
-# TensorFlow rc1.0-alpha
+## Requirements
+* TensorFlow rc1.0-alpha (didn't check 1.0 version)
+* opencv for python (2 or 3)
 
-# Usage
 ## Training
 ### dataset download (celebA)
 
@@ -19,11 +20,15 @@
 * Set the hyper-parameters
 
 ### run ./dcgan_train.sh
+```shell
+$ ./dcgan_train.sh
+```
 * You can use tensorboard for monitoring loss and generated images
 ```shell
 $ tensorboard --logdir=exp1
 ```
 
 ## Generating images
-### 
-
+```shell
+$ ./generate.sh batch_size (the number of images you want)
+```

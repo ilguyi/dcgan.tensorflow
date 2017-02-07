@@ -8,11 +8,10 @@ TRAIN_DIR=$HOME/projects/tensorflow/gan/dcgan/exp1
 DATASET_DIR=$HOME/projects/tensorflow/gan/dcgan/datasets/celebA/tfrecords
 
 
-#step=$1
-#batch=$2
-step=20000
-batch=16
-column_index=$1 \
+step=0
+batch=$1
+#step=20000
+#batch=16
 
 CUDA_VISIBLE_DEVICES=2 \
 python generate.py \
@@ -21,7 +20,6 @@ python generate.py \
     --batch_size=$batch \
     --dataset_dir=${DATASET_DIR} \
     --seed=12345 \
-    --make_gif=False \
+    --make_gif=True \
     --save_step=2000 \
-    --column_index=$column_index \
 
