@@ -12,9 +12,9 @@
 * opencv (for generate.py)
 
 ## Training
-### dataset download (celebA)
-* [celebA tfrecords](https://www.dropbox.com/sh/8j95tzg1ga48ga2/AACGPCWx86yKh-drUT6VYHtDa?dl=0)
-
+### dataset download (celebA_tfrecords.zip)
+* [celebA tfrecords](https://www.dropbox.com/s/vd0nuybgvo9uvx0/celebA_tfrecords.zip?dl=1)
+    
 ### editing dcgan_train.sh
 * Set the "WORKING_DIR path" to path you want
 * Set the dataset path or move to where dcgan/datasets/celebA/tfrecords

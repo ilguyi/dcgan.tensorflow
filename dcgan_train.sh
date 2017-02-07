@@ -4,10 +4,10 @@
 WORKING_DIR=$HOME/projects
 
 # Where the training (fine-tuned) checkpoint and logs will be saved to.
-TRAIN_DIR=$WORKING_DIR/dcgan/exp1
+TRAIN_DIR=$WORKING_DIR/dcgan.tensorflow/exp1
 
 # Where the dataset is saved to.
-DATASET_DIR=$WORKING_DIR/dcgan/datasets/celebA/tfrecords
+DATASET_DIR=$WORKING_DIR/datasets/celebA/tfrecords
 
 
 CUDA_VISIBLE_DEVICES=0 \

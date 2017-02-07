@@ -1,22 +1,17 @@
 #!/bin/bash
 
+# Working directory
+WORKING_DIR=$HOME/projects
 
 # Where the training (fine-tuned) checkpoint and logs will be saved to.
-TRAIN_DIR=$HOME/projects/tensorflow/gan/dcgan/exp1
+TRAIN_DIR=$HOME/dcgan.tensorflow/exp1
 
-# Where the dataset is saved to.
-DATASET_DIR=$HOME/projects/tensorflow/gan/dcgan/datasets/celebA/tfrecords
-
-
-step=0
 batch=$1
-#step=20000
-#batch=16
 
 CUDA_VISIBLE_DEVICES=2 \
 python generate.py \
     --checkpoint_path=${TRAIN_DIR} \
-    --checkpoint_step=$step \
+    --checkpoint_step=0 \
     --batch_size=$batch \
     --dataset_dir=${DATASET_DIR} \
     --seed=12345 \
