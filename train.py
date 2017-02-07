@@ -9,7 +9,6 @@ import copy
 
 import tensorflow as tf
 
-import mnist_input_data1
 import deep_convolutional_GAN_model
 
 

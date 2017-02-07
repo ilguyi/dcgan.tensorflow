@@ -10,7 +10,6 @@ import cv2
 
 import tensorflow as tf
 
-import mnist_input_data1
 import image_processing
 import deep_convolutional_GAN_model
 
