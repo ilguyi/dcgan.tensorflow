@@ -168,10 +168,10 @@ def main(_):
       start_time = time.time()
       random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 100])
       feed_dict={model.random_z: random_z}
-      sess.run([model.loss_Discriminator,
-                model.loss_Generator,
-                opt_op_D, opt_op_G],
-                feed_dict=feed_dict)
+      loss_D, loss_G, _, _ = sess.run([model.loss_Discriminator,
+                                       model.loss_Generator,
+                                       opt_op_D, opt_op_G],
+                                       feed_dict=feed_dict)
 
       epochs = step*FLAGS.batch_size/FLAGS.num_examples
       #if epochs < 1:
@@ -182,7 +182,7 @@ def main(_):
       if step % 10 == 0:
         examples_per_sec = FLAGS.batch_size / float(duration)
         print("Epochs: %.2f step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
-                % (epochs, step, a, b, examples_per_sec, duration))
+                % (epochs, step, loss_D, loss_G, examples_per_sec, duration))
         
       if step % 200 == 0:
         summary_str = sess.run(summary_op, feed_dict=feed_dict)

@@ -5,7 +5,6 @@
 TRAIN_DIR=$HOME/projects/tensorflow/gan/dcgan/exp1
 
 # Where the dataset is saved to.
-#DATASET_DIR=$HOME/projects/tensorflow/gan/dcgan/datasets/math_data
 DATASET_DIR=$HOME/projects/tensorflow/gan/dcgan/datasets/celebA/tfrecords
 
 
