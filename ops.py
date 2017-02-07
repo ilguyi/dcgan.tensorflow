@@ -29,7 +29,7 @@ def leakyrelu(x, leaky_weight=0.2, name=None):
     return tf.maximum(x, leaky_weight*x)
 
 
-
+# deprecated
 def generator_layer(inputs, num_outputs,
                     activation_fn='relu',
                     scope=None):
@@ -72,6 +72,7 @@ def generator_layer(inputs, num_outputs,
   
 
 
+# deprecated
 def discriminator_layer(inputs, num_outputs,
                         batch_norm_flag=True,
                         activation_fn='leakyrelu',

@@ -210,12 +210,7 @@ def distort_image(image, height, width, thread_id=0, scope=None):
     3-D float Tensor of distorted image used for training.
   """
   with tf.name_scope('distort_image', scope, [image, height, width]):
-    #distorted_image = tf.image.resize_image_with_crop_or_pad(image, 108, 108)
     distorted_image = tf.image.central_crop(image, 0.7)
-    #try:
-    #  distorted_image = tf.random_crop(image, [height*2, width*2, 3])
-    #except:
-    #  distorted_image = tf.image.central_crop(image, 0.9)
 
     # This resizing operation may distort the images because the aspect
     # ratio is not respected. We select a resize method in a round robin

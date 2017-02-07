@@ -165,24 +165,17 @@ def main(_):
     summary_op = tf.summary.merge(summaries)
 
 
-    #num_classes = 16
-    #mnist = mnist_input_data1.read_data_sets(FLAGS.dataset_dir)
-
-
     for step in range(FLAGS.max_steps+1):
       start_time = time.time()
       random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 100])
-      #feed_dict={model.random_z: random_z,
-      #           model.images: mnist.train.next_batch(FLAGS.batch_size)}
       feed_dict={model.random_z: random_z}
-      a, b, c, d = sess.run([model.loss_Discriminator,
-                             model.loss_Generator,
-                             opt_op_D, opt_op_G],
-                             feed_dict=feed_dict)
+      sess.run([model.loss_Discriminator,
+                model.loss_Generator,
+                opt_op_D, opt_op_G],
+                feed_dict=feed_dict)
 
       epochs = step*FLAGS.batch_size/FLAGS.num_examples
       #if epochs < 1:
-      #  sess.run([opt_op_G], feed_dict=feed_dict)
       #  sess.run([opt_op_G], feed_dict=feed_dict)
 
       duration = time.time() - start_time

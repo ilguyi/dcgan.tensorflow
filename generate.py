@@ -89,6 +89,9 @@ def ImageWrite(image, step):
 
 
 def GIFWrite(generated_gifs, duration=4):
+  # below code does not working
+  # convert -delay 20 -loop 0 *.jpg generated_images.gif
+  # after make generated_images in each step
 #  import moviepy.editor as mpy
 #
 #  def make_frame(t):
@@ -152,8 +155,8 @@ def main(_):
     if not FLAGS.make_gif:
       if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
         if not FLAGS.checkpoint_step:
-          #checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
-          checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
+          checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
+          #checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
         else:
           checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
 

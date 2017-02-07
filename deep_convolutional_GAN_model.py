@@ -177,18 +177,6 @@ class DeepConvGANModel(object):
 
 
 
-  def read_real_images_from_placeholder(self):
-    # read real images (number character and math symbol dataset)
-    # Setup the placeholder of data
-    with tf.variable_scope('read_real_images'):
-      self.images = tf.placeholder(dtype=tf.float32,
-                                   shape=[None, 4096],
-                                   name='image')
-      real_images = tf.reshape(self.real_images, [-1, 64, 64, 1], name='real_image')
-
-    return real_images
-
-
   def read_real_images_from_tfrecords(self):
     # read real images (for celebA)
     with tf.variable_scope('read_real_images'):
@@ -212,8 +200,6 @@ class DeepConvGANModel(object):
     # generating images from Generator() via random vector z
     self.generated_images = self.Generator(random_z)
 
-    # randomly pick up real images from dataset (for number characters and math symbols dataset)
-    #self.real_images = self.read_real_images_from_placeholder()
     # randomly pick up real images from dataset (for celebA dataset)
     self.real_images = self.read_real_images_from_tfrecords()
 
