@@ -288,8 +288,8 @@ def image_preprocessing(image_buffer, train, thread_id=0):
     image = eval_image(image, height, width)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
-  image = tf.sub(image, 0.5)
-  image = tf.mul(image, 2.0)
+  image = tf.subtract(image, 0.5)
+  image = tf.multiply(image, 2.0)
 
   return image
 
