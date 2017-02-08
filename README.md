@@ -33,3 +33,8 @@ $ tensorboard --logdir=exp1
 ```shell
 $ ./generate.sh batch_size (the number of images you want)
 ```
+
+## Results
+### celebA datasets
+![result](results/generated_images.gif)
+
