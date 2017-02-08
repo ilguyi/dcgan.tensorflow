@@ -8,7 +8,7 @@
   Il Gu Yi
 
 ## Requirements
-* TensorFlow rc1.0-alpha (didn't check 1.0 version)
+* TensorFlow 1.0.0
 * opencv (for generate.py)
 
 ## Training
