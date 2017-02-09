@@ -11,11 +11,8 @@ import tensorflow as tf
 
 import deep_convolutional_GAN_model
 
-
 slim = tf.contrib.slim
 
-
-#tf.app.flags.DEFINE_boolean()
 
 ##################
 # Training Flags #
@@ -69,10 +66,7 @@ tf.app.flags.DEFINE_float('adam_epsilon',
                           1e-08,
                           'Epsilon term for the optimizer.')
 
-
 FLAGS = tf.app.flags.FLAGS
-
-
 
 
 

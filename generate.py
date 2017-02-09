@@ -17,8 +17,6 @@ import deep_convolutional_GAN_model
 slim = tf.contrib.slim
 
 
-#tf.app.flags.DEFINE_boolean()
-
 ####################
 # Generating Flags #
 ####################
@@ -46,9 +44,6 @@ tf.app.flags.DEFINE_integer('save_steps',
 tf.app.flags.DEFINE_integer('column_index',
                             0,
                             'The column index of random vector for linear interpolation.')
-
-
-
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -111,7 +106,6 @@ def GIFWrite(generated_gifs, duration=4):
 
 
 
-
 def run_generator_once(saver, checkpoint_path, model, random_z):
   print(checkpoint_path)
   start_time = time.time()
@@ -131,7 +125,6 @@ def run_generator_once(saver, checkpoint_path, model, random_z):
     print("Loading time: %.3f" % duration)
 
   return generated_images
-
 
 
 
