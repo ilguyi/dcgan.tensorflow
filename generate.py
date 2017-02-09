@@ -168,14 +168,17 @@ def main(_):
 
 
       # Set fixed random vectors
-      #np.random.seed(FLAGS.seed)
-      random_z_one = np.random.uniform(-1, 1, [1, 100])
-      random_z = random_z_one
-      for i in range(FLAGS.batch_size-1):
-        random_z = np.concatenate((random_z, random_z_one), axis=0)
+      np.random.seed(FLAGS.seed)
+      random_z = np.random.uniform(-1, 1, [batch_size, 100])
 
-      linear_interpolation = np.linspace(-1.0, 1.0, num=FLAGS.batch_size)
-      random_z[:, FLAGS.column_index] = linear_interpolation
+      # Set random vector for linear interpolation
+      #random_z_one = np.random.uniform(-1, 1, [1, 100])
+      #random_z = random_z_one
+      #for i in range(FLAGS.batch_size-1):
+      #  random_z = np.concatenate((random_z, random_z_one), axis=0)
+
+      #linear_interpolation = np.linspace(-1.0, 1.0, num=FLAGS.batch_size)
+      #random_z[:, FLAGS.column_index] = linear_interpolation
 
       generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
       squared_images = make_squared_image(generated_images)
