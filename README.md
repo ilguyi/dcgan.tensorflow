@@ -33,9 +33,8 @@ $ tensorboard --logdir=exp1
 ```shell
 $ ./generate.sh batch_size (the number of images you want)
 ```
-* If the make_gif flag is True (--make_gif=True) then you will get generated images
-in each step per save_step flag
-* You should do following command in order to make single gif file
+* If the make_gif flag is True (--make_gif=True) then you will get generated images in each step.
+* You should do following command in order to make single gif file.
 ```shell
 $ convert -delay 20 -loop 0 *.jpg generated_images.gif
 ```
