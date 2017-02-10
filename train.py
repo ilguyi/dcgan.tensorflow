@@ -20,6 +20,9 @@ slim = tf.contrib.slim
 tf.app.flags.DEFINE_string('train_dir',
                            '',
                            'Directory where checkpoints and event logs are written to.')
+tf.app.flags.DEFINE_integer('max_steps',
+                            10,
+                            'The maximum number of training steps.')
 tf.app.flags.DEFINE_integer('save_steps',
                             5000,
                             'The step per saving model.')
@@ -36,9 +39,6 @@ tf.app.flags.DEFINE_integer('batch_size',
 tf.app.flags.DEFINE_integer('num_examples',
                             100,
                             'The number of samples in total dataset.')
-tf.app.flags.DEFINE_integer('max_steps',
-                            10,
-                            'The maximum number of training steps.')
 
 ########################
 # Learning rate policy #
