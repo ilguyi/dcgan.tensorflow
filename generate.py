@@ -24,8 +24,9 @@ tf.app.flags.DEFINE_string('checkpoint_path',
                            '',
                            'Directory where to read model checkpoints.')
 tf.app.flags.DEFINE_integer('checkpoint_step',
-                            None,
-                            'The step you want to read model checkpoints.')
+                            -1,
+                            'The step you want to read model checkpoints.'
+                            '-1 means the latest model checkpoints.')
 tf.app.flags.DEFINE_integer('batch_size',
                             32,
                             'The number of samples in each batch.')
@@ -146,11 +147,12 @@ def main(_):
 
     if not FLAGS.make_gif:
       if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
-        if not FLAGS.checkpoint_step:
-          #checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
-          checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
+        if FLAGS.checkpoint_step == -1:
+          checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
+          checkpoint_step = int(checkpoint_path.split('-')[1])
         else:
           checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
+          checkpoint_step = FLAGS.checkpoint_step
 
         if os.path.basename(checkpoint_path) + '.data-00000-of-00001' in os.listdir(FLAGS.checkpoint_path):
           print(os.path.basename(checkpoint_path))
@@ -162,7 +164,7 @@ def main(_):
 
       # Set fixed random vectors
       np.random.seed(FLAGS.seed)
-      random_z = np.random.uniform(-1, 1, [batch_size, 100])
+      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 100])
 
       # Set random vector for linear interpolation
       #random_z_one = np.random.uniform(-1, 1, [1, 100])
@@ -176,7 +178,7 @@ def main(_):
       generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
       squared_images = make_squared_image(generated_images)
 
-      ImageWrite(squared_images, FLAGS.checkpoint_step)
+      ImageWrite(squared_images, checkpoint_step)
 
     else:
       # Find all checkpoint_path
