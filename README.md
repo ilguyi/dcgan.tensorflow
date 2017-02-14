@@ -8,8 +8,9 @@
   Il Gu Yi
 
 ## Requirements
-* TensorFlow 1.0.0
+* TensorFlow 1.0.0 or greater
 * opencv (for generate.py)
+* numpy
 
 ## Training
 ### dataset download (celebA_tfrecords.zip)
@@ -19,6 +20,31 @@
 * Set the "WORKING_DIR path" to path you want
 * Set the dataset path or move to where dcgan/datasets/celebA/tfrecords
 * Set the hyper-parameters
+
+#### dcgan_train.sh
+```shell
+# Working directory
+WORKING_DIR=$HOME/projects
+
+# Where the training (fine-tuned) checkpoint and logs will be saved to.
+TRAIN_DIR=$WORKING_DIR/dcgan.tensorflow/exp1
+
+# Where the dataset is saved to.
+DATASET_DIR=$WORKING_DIR/datasets/celebA/tfrecords
+
+CUDA_VISIBLE_DEVICES=0 \
+python train.py \
+    --train_dir=${TRAIN_DIR} \
+    --dataset_dir=${DATASET_DIR} \
+    --initial_learning_rate=0.0002 \
+    --num_epochs_per_decay=5 \
+    --learning_rate_decay_factor=0.9 \
+    --batch_size=128 \
+    --num_examples=202599 \
+    --max_steps=30000 \
+    --save_steps=2000 \
+    --adam_beta1=0.5 \
+```
 
 ### run ./dcgan_train.sh
 ```shell
@@ -30,6 +56,31 @@ $ tensorboard --logdir=exp1
 ```
 
 ## Generating images
+### generate.sh
+```shell
+# Working directory
+WORKING_DIR=$HOME/projects
+
+# Where the training (fine-tuned) checkpoint and logs will be saved to.
+TRAIN_DIR=$WORKING_DIR/dcgan.tensorflow/exp1
+
+# Where the dataset is saved to.
+DATASET_DIR=$WORKING_DIR/datasets/celebA/tfrecords
+
+batch=$1
+
+#CUDA_VISIBLE_DEVICES=2 \
+python generate.py \
+    --checkpoint_path=${TRAIN_DIR} \
+    --checkpoint_step=-1 \
+    --batch_size=$batch \
+    --dataset_dir=${DATASET_DIR} \
+    --seed=12345 \
+    --make_gif=False \
+    --save_step=2000 \
+```
+
+### run ./generate.sh
 ```shell
 $ ./generate.sh batch_size (the number of images you want)
 ```
