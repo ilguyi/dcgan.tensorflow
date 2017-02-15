@@ -82,7 +82,7 @@ def main(_):
   with tf.Graph().as_default():
 
     # Build the model.
-    model = deep_convolutional_GAN_model.DeepConvGANModel()
+    model = deep_convolutional_GAN_model.DeepConvGANModel(mode="train")
     model.build()
 
     # Create global step

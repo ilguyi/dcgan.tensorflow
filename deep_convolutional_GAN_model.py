@@ -28,15 +28,16 @@ class DeepConvGANModel(object):
   Alec Radford, Luke Metz and Soumith Chintala
   """
 
-  def __init__(self):
+  def __init__(self, mode):
     """Basic setup.
     """
-    #assert mode in ["train", "generate"]
-    #self.mode = mode
+    assert mode in ["train", "generate"]
+    self.mode = mode
 
     # A int32 scalar value;
     self.random_z_size = 100
 
+    print('The mode is %s.' % self.mode)
     print('complete initializing model.')
 
 
@@ -193,73 +194,72 @@ class DeepConvGANModel(object):
 
 
 
-
   def build(self):
     # generating random vector
     random_z = self.build_random_z_inputs()
     # generating images from Generator() via random vector z
     self.generated_images = self.Generator(random_z)
 
-    # randomly pick up real images from dataset (for celebA dataset)
-    self.real_images = self.read_real_images_from_tfrecords()
+    if self.mode == "train":
+      # randomly pick up real images from dataset (for celebA dataset)
+      self.real_images = self.read_real_images_from_tfrecords()
 
-    # discriminating real images by Discriminator()
-    self.real_logits = self.Discriminator(self.real_images)
-    # discriminating fake images (generated_images) by Discriminator()
-    self.fake_logits = self.Discriminator(self.generated_images, reuse=True)
+      # discriminating real images by Discriminator()
+      self.real_logits = self.Discriminator(self.real_images)
+      # discriminating fake images (generated_images) by Discriminator()
+      self.fake_logits = self.Discriminator(self.generated_images, reuse=True)
 
-    # losses of real with label "1"
-    self.loss_real = tf.reduce_mean(
-                        tf.nn.sigmoid_cross_entropy_with_logits(
-                            #labels=tf.ones_like(self.real_logits),
-                            # one side label smoothing
-                            labels=tf.fill(self.real_logits.get_shape(), 0.9),
-                            #labels=tf.ones_like(self.real_logits)*0.9, # the same effect above line
-                            logits=self.real_logits))
+      # losses of real with label "1"
+      self.loss_real = tf.reduce_mean(
+                          tf.nn.sigmoid_cross_entropy_with_logits(
+                              #labels=tf.ones_like(self.real_logits),
+                              # one side label smoothing
+                              labels=tf.fill(self.real_logits.get_shape(), 0.9),
+                              #labels=tf.ones_like(self.real_logits)*0.9, # the same effect above line
+                              logits=self.real_logits))
 
-    # losses of fake with label "0"
-    self.loss_fake = tf.reduce_mean(
-                        tf.nn.sigmoid_cross_entropy_with_logits(
-                            labels=tf.zeros_like(self.fake_logits),
-                            logits=self.fake_logits))
+      # losses of fake with label "0"
+      self.loss_fake = tf.reduce_mean(
+                          tf.nn.sigmoid_cross_entropy_with_logits(
+                              labels=tf.zeros_like(self.fake_logits),
+                              logits=self.fake_logits))
 
-    # losses of Discriminator
-    self.loss_Discriminator = self.loss_real + self.loss_fake
+      # losses of Discriminator
+      self.loss_Discriminator = self.loss_real + self.loss_fake
 
-    # losses of Generator with label "1"
-    self.loss_Generator = tf.reduce_mean(
-                              tf.nn.sigmoid_cross_entropy_with_logits(
-                                  labels=tf.ones_like(self.fake_logits),
-                                  logits=self.fake_logits))
-    
-    # Separate variables for each function
-    t_vars = tf.trainable_variables()
-    
-    self.D_vars = [var for var in t_vars if 'Discriminator' in var.name]
-    self.G_vars = [var for var in t_vars if 'Generator' in var.name]
+      # losses of Generator with label "1"
+      self.loss_Generator = tf.reduce_mean(
+                                tf.nn.sigmoid_cross_entropy_with_logits(
+                                    labels=tf.ones_like(self.fake_logits),
+                                    logits=self.fake_logits))
+      
+      # Separate variables for each function
+      t_vars = tf.trainable_variables()
+      
+      self.D_vars = [var for var in t_vars if 'Discriminator' in var.name]
+      self.G_vars = [var for var in t_vars if 'Generator' in var.name]
 
-    for var in self.G_vars:
-      print(var.name)
-    for var in self.D_vars:
-      print(var.name)
+      for var in self.G_vars:
+        print(var.name)
+      for var in self.D_vars:
+        print(var.name)
 
-    # Add summaries.
-    # Add loss summaries
-    tf.summary.scalar("losses/loss_Discriminator", self.loss_Discriminator)
-    tf.summary.scalar("losses/loss_Generator", self.loss_Generator)
-    tf.summary.scalar("losses/loss_real", self.loss_real)
-    tf.summary.scalar("losses/loss_fake", self.loss_fake)
+      # Add summaries.
+      # Add loss summaries
+      tf.summary.scalar("losses/loss_Discriminator", self.loss_Discriminator)
+      tf.summary.scalar("losses/loss_Generator", self.loss_Generator)
+      tf.summary.scalar("losses/loss_real", self.loss_real)
+      tf.summary.scalar("losses/loss_fake", self.loss_fake)
 
-    # Add histogram summaries
-    for var in self.D_vars:
-      self.D_summary = tf.summary.histogram(var.op.name, var)
-    for var in self.G_vars:
-      self.G_summary = tf.summary.histogram(var.op.name, var)
+      # Add histogram summaries
+      for var in self.D_vars:
+        self.D_summary = tf.summary.histogram(var.op.name, var)
+      for var in self.G_vars:
+        self.G_summary = tf.summary.histogram(var.op.name, var)
 
-    # Add image summaries
-    tf.summary.image('random_images', self.generated_images, max_outputs=10)
-    tf.summary.image('real_images', self.real_images, max_outputs=10)
-
+      # Add image summaries
+      tf.summary.image('random_images', self.generated_images, max_outputs=10)
+      tf.summary.image('real_images', self.real_images, max_outputs=10)
 
     print('complete model build.')
 

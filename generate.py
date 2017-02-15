@@ -30,9 +30,6 @@ tf.app.flags.DEFINE_integer('checkpoint_step',
 tf.app.flags.DEFINE_integer('batch_size',
                             32,
                             'The number of samples in each batch.')
-tf.app.flags.DEFINE_string('dataset_dir',
-                           None,
-                           'The directory where the dataset files are stored.')
 tf.app.flags.DEFINE_integer('seed',
                             0,
                             'The seed number.')
@@ -139,7 +136,7 @@ def main(_):
     start_time = time.time()
 
     # Build the generative model.
-    model = deep_convolutional_GAN_model.DeepConvGANModel()
+    model = deep_convolutional_GAN_model.DeepConvGANModel(mode="generate")
     model.build()
 
     # Set up the Saver for saving and restoring model checkpoints.
