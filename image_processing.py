@@ -419,7 +419,7 @@ def batch_inputs(batch_size, train, num_preprocess_threads=None,
     for thread_id in range(num_preprocess_threads):
       # Parse a serialized Example proto to extract the image and metadata.
       image_buffer = parse_example_proto(example_serialized)
-      image = image_preprocessing(image_buffer, thread_id)
+      image = image_preprocessing(image_buffer, train, thread_id)
       images.append([image])
 
     images = tf.train.batch_join(
