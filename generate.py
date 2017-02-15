@@ -11,7 +11,7 @@ import cv2
 import tensorflow as tf
 
 import image_processing
-import deep_convolutional_GAN_model
+import deep_convolutional_GAN_model as dcgan
 
 
 slim = tf.contrib.slim
@@ -136,7 +136,7 @@ def main(_):
     start_time = time.time()
 
     # Build the generative model.
-    model = deep_convolutional_GAN_model.DeepConvGANModel(mode="generate")
+    model = dcgan.DeepConvGANModel(mode="generate")
     model.build()
 
     # Set up the Saver for saving and restoring model checkpoints.

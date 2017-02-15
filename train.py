@@ -9,7 +9,7 @@ import copy
 
 import tensorflow as tf
 
-import deep_convolutional_GAN_model
+import deep_convolutional_GAN_model as dcgan
 
 slim = tf.contrib.slim
 
@@ -82,7 +82,7 @@ def main(_):
   with tf.Graph().as_default():
 
     # Build the model.
-    model = deep_convolutional_GAN_model.DeepConvGANModel(mode="train")
+    model = dcgan.DeepConvGANModel(mode="train")
     model.build()
 
     # Create global step
