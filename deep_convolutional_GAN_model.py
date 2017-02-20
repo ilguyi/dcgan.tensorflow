@@ -253,9 +253,9 @@ class DeepConvGANModel(object):
 
       # Add histogram summaries
       for var in self.D_vars:
-        self.D_summary = tf.summary.histogram(var.op.name, var)
+        tf.summary.histogram(var.op.name, var)
       for var in self.G_vars:
-        self.G_summary = tf.summary.histogram(var.op.name, var)
+        tf.summary.histogram(var.op.name, var)
 
       # Add image summaries
       tf.summary.image('random_images', self.generated_images, max_outputs=10)
