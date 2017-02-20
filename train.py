@@ -160,16 +160,13 @@ def main(_):
 
     for step in range(FLAGS.max_steps+1):
       start_time = time.time()
-      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 100])
-      feed_dict={model.random_z: random_z}
       loss_D, loss_G, _, _ = sess.run([model.loss_Discriminator,
                                        model.loss_Generator,
-                                       opt_op_D, opt_op_G],
-                                       feed_dict=feed_dict)
+                                       opt_op_D, opt_op_G])
 
       epochs = step*FLAGS.batch_size/FLAGS.num_examples
       #if epochs < 1:
-      #  sess.run([opt_op_G], feed_dict=feed_dict)
+      #  sess.run([opt_op_D])
 
       duration = time.time() - start_time
 
@@ -179,7 +176,7 @@ def main(_):
                 % (epochs, step, loss_D, loss_G, examples_per_sec, duration))
         
       if step % 200 == 0:
-        summary_str = sess.run(summary_op, feed_dict=feed_dict)
+        summary_str = sess.run(summary_op)
         summary_writer.add_summary(summary_str, step)
 
       # Save the model checkpoint periodically.

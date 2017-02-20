@@ -41,6 +41,20 @@ class DeepConvGANModel(object):
     print('complete initializing model.')
 
 
+  def build_random_z_inputs(self):
+    # Setup placeholder of random vector z
+    with tf.variable_scope('random_z'):
+      if self.mode == "generate":
+        self.random_z = tf.placeholder(dtype=tf.float32,
+                                       shape=[None, self.random_z_size],
+                                       name='random_z')
+      else:
+        self.random_z = tf.random_uniform([FLAGS.batch_size, self.random_z_size],
+                                           minval=-1,
+                                           maxval=1,
+                                           dtype=tf.float32)
+    return self.random_z
+
 
   def Generator(self, random_z):
     """Generator setup.
@@ -74,44 +88,38 @@ class DeepConvGANModel(object):
                                                    scope='layer1/batch_norm')
         # layer1_relu
         self.layer1_relu = tf.nn.relu(self.layer1_batch_norm, 'layer1_relu')
-
         # layer2 inputs: 4 x 4 x 512
         self.layer2 = layers.conv2d_transpose(inputs=self.layer1_relu,
                                               num_outputs=256,
                                               scope='layer2')
-
         # layer3 inputs: 8 x 8 x 256
         self.layer3 = layers.conv2d_transpose(inputs=self.layer2,
                                               num_outputs=128,
                                               scope='layer3')
-
         # layer4 inputs: 16 x 16 x 128
         self.layer4 = layers.conv2d_transpose(inputs=self.layer3,
                                               num_outputs=64,
                                               scope='layer4')
-
         # layer5 inputs: 32 x 32 x 64
         self.layer5 = layers.conv2d_transpose(inputs=self.layer4,
                                               num_outputs=3,
                                               activation_fn=tf.tanh,
                                               scope='layer5')
-
         # output: 64 x 64 x 1
         generated_images = self.layer5
 
         return generated_images
 
 
-
-  def build_random_z_inputs(self):
-    # Setup placeholder of random vector z
-    with tf.variable_scope('random_z'):
-      self.random_z = tf.placeholder(dtype=tf.float32,
-                                     shape=[None, self.random_z_size],
-                                     name='random_z')
-
-    return self.random_z
-
+  def read_real_images_from_tfrecords(self):
+    # read real images (for celebA)
+    with tf.variable_scope('read_real_images'):
+      #num_preprocess_threads = FLAGS.num_preprocess_threads * FLAGS.num_gpus
+      num_preprocess_threads = FLAGS.num_preprocess_threads
+      real_images = image_processing.distorted_inputs(
+                      batch_size=FLAGS.batch_size,
+                      num_preprocess_threads=num_preprocess_threads)
+      return real_images
 
 
   def Discriminator(self, images, reuse=False):
@@ -138,7 +146,6 @@ class DeepConvGANModel(object):
                                     num_outputs=64,
                                     activation_fn=ops.leakyrelu,
                                     scope='layer1')
-
         # layer2 inputs: 32 x 32 x 64
         self.layer2 = layers.conv2d(inputs=self.layer1,
                                     num_outputs=128,
@@ -146,7 +153,6 @@ class DeepConvGANModel(object):
                                     normalizer_params=batch_norm_params,
                                     activation_fn=ops.leakyrelu,
                                     scope='layer2')
-
         # layer3 inputs: 16 x 16 x 128
         self.layer3 = layers.conv2d(inputs=self.layer2,
                                     num_outputs=256,
@@ -154,7 +160,6 @@ class DeepConvGANModel(object):
                                     normalizer_params=batch_norm_params,
                                     activation_fn=ops.leakyrelu,
                                     scope='layer3')
-        
         # layer4 inputs: 8 x 8 x 256
         self.layer4 = layers.conv2d(inputs=self.layer3,
                                     num_outputs=512,
@@ -162,35 +167,25 @@ class DeepConvGANModel(object):
                                     normalizer_params=batch_norm_params,
                                     activation_fn=ops.leakyrelu,
                                     scope='layer4')
-
         # reshape input: 4 x 4 x 512
-        self.reshape = tf.reshape(self.layer4, [-1, 4*4*512], name='reshape')
-
+        #self.reshape = tf.reshape(self.layer4, [-1, 4*4*512], name='reshape')
         # layer5 inputs: 4 x 4 x 512
-        self.layer5 = layers.fully_connected(inputs=self.reshape,
-                                             num_outputs=1,
-                                             activation_fn=None,
-                                             scope='layer5')
+        #self.layer5 = layers.fully_connected(inputs=self.reshape,
+        #                                     num_outputs=1,
+        #                                     activation_fn=None,
+        #                                     scope='layer5')
+        self.layer5 = layers.conv2d(inputs=self.layer4,
+                                    num_outputs=1,
+                                    stride=[1,1],
+                                    padding='VALID',
+                                    normalizer_fn=None,
+                                    normalizer_params=None,
+                                    activation_fn=None,
+                                    scope='layer5')
 
         discriminator_logits = self.layer5
 
         return discriminator_logits
-
-
-
-  def read_real_images_from_tfrecords(self):
-    # read real images (for celebA)
-    with tf.variable_scope('read_real_images'):
-      #num_preprocess_threads = FLAGS.num_preprocess_threads * FLAGS.num_gpus
-      num_preprocess_threads = FLAGS.num_preprocess_threads
-      real_images = image_processing.distorted_inputs(
-                      batch_size=FLAGS.batch_size,
-                      num_preprocess_threads=num_preprocess_threads)
-    
-      #input_summaries = copy.copy(tf.get_collection(tf.GraphKeys.SUMMARIES))
-
-    return real_images
-
 
 
 
