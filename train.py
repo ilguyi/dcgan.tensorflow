@@ -21,7 +21,7 @@ tf.app.flags.DEFINE_string('train_dir',
                            '',
                            'Directory where checkpoints and event logs are written to.')
 tf.app.flags.DEFINE_integer('max_steps',
-                            10,
+                            10000,
                             'The maximum number of training steps.')
 tf.app.flags.DEFINE_integer('save_steps',
                             5000,

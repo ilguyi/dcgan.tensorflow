@@ -37,6 +37,12 @@ class DeepConvGANModel(object):
     # A int32 scalar value;
     self.random_z_size = 100
 
+    # A int32 scalar value;
+    self.batch_size = FLAGS.batch_size
+
+    # A int32 scalar value;
+    self.num_preprocess_threads = FLAGS.num_preprocess_threads
+
     print('The mode is %s.' % self.mode)
     print('complete initializing model.')
 
@@ -49,7 +55,7 @@ class DeepConvGANModel(object):
                                        shape=[None, self.random_z_size],
                                        name='random_z')
       else:
-        self.random_z = tf.random_uniform([FLAGS.batch_size, self.random_z_size],
+        self.random_z = tf.random_uniform([self.batch_size, self.random_z_size],
                                            minval=-1,
                                            maxval=1,
                                            dtype=tf.float32)
@@ -105,7 +111,7 @@ class DeepConvGANModel(object):
                                               num_outputs=3,
                                               activation_fn=tf.tanh,
                                               scope='layer5')
-        # output: 64 x 64 x 1
+        # output: 64 x 64 x 3
         generated_images = self.layer5
 
         return generated_images
@@ -114,10 +120,10 @@ class DeepConvGANModel(object):
   def read_real_images_from_tfrecords(self):
     # read real images (for celebA)
     with tf.variable_scope('read_real_images'):
-      #num_preprocess_threads = FLAGS.num_preprocess_threads * FLAGS.num_gpus
-      num_preprocess_threads = FLAGS.num_preprocess_threads
+      #num_preprocess_threads = self.num_preprocess_threads * self.num_gpus
+      num_preprocess_threads = self.num_preprocess_threads
       real_images = image_processing.distorted_inputs(
-                      batch_size=FLAGS.batch_size,
+                      batch_size=self.batch_size,
                       num_preprocess_threads=num_preprocess_threads)
       return real_images
 
