@@ -46,11 +46,11 @@ python train.py \
     --adam_beta1=0.5 \
 ```
 
-### run ./dcgan_train.sh
+### run dcgan_train.sh
 ```shell
 $ ./dcgan_train.sh
 ```
-* You can use tensorboard for monitoring loss and generated images
+* You can use `tensorboard` for monitoring loss and generated images
 ```shell
 $ tensorboard --logdir=exp1
 ```
@@ -66,7 +66,7 @@ TRAIN_DIR=$WORKING_DIR/dcgan.tensorflow/exp1
 
 batch=$1
 
-#CUDA_VISIBLE_DEVICES=2 \
+#CUDA_VISIBLE_DEVICES=0 \
 python generate.py \
     --checkpoint_path=${TRAIN_DIR} \
     --checkpoint_step=-1 \
@@ -74,12 +74,13 @@ python generate.py \
     --seed=12345 \
     --make_gif=False \
     --save_step=2000 \
+
+convert -delay 20 -loop 0 *.jpg generated_images.gif
 ```
 
-### run ./generate.sh
+### run generate.sh
 ```shell
 $ ./generate.sh batch_size (the number of images you want)
-$ convert -delay 20 -loop 0 *.jpg generated_images.gif
 ```
 * If the `make_gif` flag is True (`--make_gif=True`) then you will get generated images in each step.
 * And `convert` command make one gif file from generated images.
