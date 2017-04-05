@@ -161,7 +161,7 @@ def main(_):
 
       # Set fixed random vectors
       np.random.seed(FLAGS.seed)
-      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 100])
+      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 1, 1, 100])
 
       # Set random vector for linear interpolation
       #random_z_one = np.random.uniform(-1, 1, [1, 100])
@@ -195,7 +195,7 @@ def main(_):
 
       # Set fixed random vectors
       np.random.seed(FLAGS.seed)
-      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 100])
+      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 1, 1, 100])
 
       generated_gifs = []
       for checkpoint_path in checkpoint_filenames:
