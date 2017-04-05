@@ -72,7 +72,7 @@ python generate.py \
     --checkpoint_step=-1 \
     --batch_size=$batch \
     --seed=12345 \
-    --make_gif=False \
+    --make_gif=True \
     --save_step=2000 \
 
 convert -delay 20 -loop 0 *.jpg generated_images.gif
