@@ -1,14 +1,14 @@
-# Deep Convolutional Generative Adversarial Networks with TensorFlow
+# Deep Convolutional Generative Adversarial Networks with TensorFlow & slim
 ##  implementation based on http://arxiv.org/abs/1511.06434
   "Unsupervised Representation Learning with
   Deep Convolutional Generative Adversarial Networks",
   Alec Radford, Luke Metz and Soumith Chintala
 
-## Author
-  Il Gu Yi
+## Network architecture
+![generator](results/dcgan_Generator.png)
 
 ## Requirements
-* TensorFlow 1.0.0 or greater
+* TensorFlow 1.1.0 or greater(?)
 * opencv (for generate.py)
 * numpy
 
@@ -79,14 +79,14 @@ python generate.py \
 ### run ./generate.sh
 ```shell
 $ ./generate.sh batch_size (the number of images you want)
-```
-* If the make_gif flag is True (--make_gif=True) then you will get generated images in each step.
-* You should do following command in order to make single gif file.
-```shell
 $ convert -delay 20 -loop 0 *.jpg generated_images.gif
 ```
+* If the `make_gif` flag is True (`--make_gif=True`) then you will get generated images in each step.
+* And `convert` command make one gif file from generated images.
 
 ## Results
 ### celebA datasets
 ![result](results/generated_images.gif)
 
+## Author
+  Il Gu Yi
