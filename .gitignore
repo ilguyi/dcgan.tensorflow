@@ -5,4 +5,8 @@
 # OS or Editor folders
 .DS_Store
 Thumbs.db
+results/.DS_Store
 
+# Data folders
+datasets
+exp*
