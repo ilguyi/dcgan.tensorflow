@@ -10,9 +10,6 @@ import tensorflow as tf
 layers = tf.contrib.layers
 
 
-
-
-
 def leakyrelu(x, leaky_weight=0.2, name=None):
   """Computes leaky relu of `x` element-wise.
 
@@ -29,94 +26,28 @@ def leakyrelu(x, leaky_weight=0.2, name=None):
     return tf.maximum(x, leaky_weight*x)
 
 
-# deprecated
-def generator_layer(inputs, num_outputs,
-                    activation_fn='relu',
-                    scope=None):
-  """Compute conv2d_transpose -> batch_norm -> activation in order
-     for Generator.
+def GANLoss(logits, is_real=True, smoothing=0.9, name=None):
+  """Computes standard GAN loss between `logits` and `labels`.
 
   Args:
-    inputs: A Tensor
-    num_outputs: number of outputs
-    activation_fn: 'relu' or 'tanh'
-    scope: scope
+    logits: A float32 Tensor of logits.
+    is_real: boolean, True means `1` labeling, False means `0` labeling.
+    smoothing: one side labels smoothing.
 
   Returns:
-    A Tensor
+    A scalar Tensor representing the loss value.
   """
-  with tf.variable_scope(scope):
-    # conv2d_transpose
-    conv2d_t = layers.conv2d_transpose(inputs=inputs,
-                                       num_outputs=num_outputs,
-                                       kernel_size=[4, 4],
-                                       stride=[2, 2],
-                                       activation_fn=None,
-                                       scope='conv2d_t')
+  if is_real:
+    # one side label smoothing
+    labels = tf.fill(logits.get_shape(), smoothing)
+  else:
+    labels = tf.zeros_like(logits)
 
-    # batch_norm
-    batch_norm = layers.batch_norm(inputs=conv2d_t,
-                                   decay=0.999,
-                                   epsilon=0.001,
-                                   scope='batch_norm')
-
-    # activation_fn
-    if activation_fn == 'relu':
-      activation = tf.nn.relu(batch_norm, 'relu')
-    elif activation_fn == 'tanh':
-      activation = tf.tanh(batch_norm, 'tanh')
-    else:
-      raise ValueError('activation_fn must be \'relu\' or \'tanh\'')
-
-    return activation
-  
-
-
-# deprecated
-def discriminator_layer(inputs, num_outputs,
-                        batch_norm_flag=True,
-                        activation_fn='leakyrelu',
-                        scope=None):
-  """Compute conv2d -> batch_norm -> activation in order
-     for Discriminator.
-
-  Args:
-    inputs: A Tensor
-    num_outputs: number of outputs
-    batch_norm_flag: whether use batch_norm layer (True or False)
-    activation_fn: 'leakyrelu' or 'sigmoid'
-    scope: scope
-
-  Returns:
-    A Tensor
-  """
-  with tf.variable_scope(scope):
-    # conv2d
-    conv2d = layers.conv2d(inputs=inputs,
-                           num_outputs=num_outputs,
-                           kernel_size=[4, 4],
-                           stride=[2, 2],
-                           activation_fn=None,
-                           scope='conv2d')
-
-    # batch_norm
-    if batch_norm_flag:
-      batch_norm = layers.batch_norm(inputs=conv2d,
-                                     decay=0.999,
-                                     epsilon=0.001,
-                                     scope='batch_norm')
-    else:
-      batch_norm = conv2d
-
-    # activation_fn
-    if activation_fn == 'leakyrelu':
-      activation = leakyrelu(batch_norm, leaky_weight=0.2, name='leakyrelu')
-    elif activation_fn == 'sigmoid':
-      activation = tf.sigmoid(batch_norm, 'sigmoid')
-    else:
-      raise ValueError('activation_fn must be \'leakyrelu\' or \'sigmoid\'')
-
-    return activation
-  
+  with ops.name_scope(name, 'GAN_loss', [logits, labels]) as name:
+    loss = tf.reduce_mean(
+              tf.nn.sigmoid_cross_entropy_with_logits(
+                              labels=labels,
+                              logits=logits))
+    return loss
 
 
