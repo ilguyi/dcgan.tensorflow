@@ -75,7 +75,7 @@ python generate.py \
     --make_gif=True \
     --save_step=2000 \
 
-convert -delay 20 -loop 0 *.jpg generated_images.gif
+convert -delay 30 -loop 0 *.jpg generated_images.gif
 ```
 
 ### run generate.sh
