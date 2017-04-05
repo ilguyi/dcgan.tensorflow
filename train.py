@@ -135,54 +135,54 @@ def main(_):
     saver = tf.train.Saver(max_to_keep=1000)
 
 
-    # Build an initialization operation to run below.
-    init = tf.global_variables_initializer()
-
     # Start running operations on the Graph.
-    sess = tf.Session()
-    sess.run(init)
+    with tf.Session() as sess:
+      # Build an initialization operation to run below.
+      init = tf.global_variables_initializer()
+      sess.run(init)
 
-    # Start the queue runners.
-    tf.train.start_queue_runners(sess=sess)
-
-
-    # Create a summary writer, add the 'graph' to the event file.
-    summary_writer = tf.summary.FileWriter(
-                        FLAGS.train_dir,
-                        sess.graph)
-
-    # Retain the summaries
-    summaries = tf.get_collection(tf.GraphKeys.SUMMARIES)
-
-    # Build the summary operation
-    summary_op = tf.summary.merge(summaries)
+      # Start the queue runners.
+      tf.train.start_queue_runners(sess=sess)
 
 
-    for step in range(FLAGS.max_steps+1):
-      start_time = time.time()
-      loss_D, loss_G, _, _ = sess.run([model.loss_Discriminator,
-                                       model.loss_Generator,
-                                       opt_op_D, opt_op_G])
+      # Create a summary writer, add the 'graph' to the event file.
+      summary_writer = tf.summary.FileWriter(
+                          FLAGS.train_dir,
+                          sess.graph)
 
-      epochs = step*FLAGS.batch_size/FLAGS.num_examples
-      #if epochs < 1:
-      #  sess.run([opt_op_D])
+      # Retain the summaries
+      #summaries = tf.get_collection(tf.GraphKeys.SUMMARIES)
+      # Build the summary operation
+      #summary_op = tf.summary.merge(summaries)
 
-      duration = time.time() - start_time
+      # Retain the summaries and Build the summary operation
+      summary_op = tf.summary.merge_all()
 
-      if step % 10 == 0:
-        examples_per_sec = FLAGS.batch_size / float(duration)
-        print("Epochs: %.2f step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
-                % (epochs, step, loss_D, loss_G, examples_per_sec, duration))
-        
-      if step % 200 == 0:
-        summary_str = sess.run(summary_op)
-        summary_writer.add_summary(summary_str, step)
+      for step in range(FLAGS.max_steps+1):
+        start_time = time.time()
+        _, _, loss_D, loss_G = sess.run([opt_op_D, opt_op_G,
+                                         model.loss_Discriminator,
+                                         model.loss_Generator])
 
-      # Save the model checkpoint periodically.
-      if step % FLAGS.save_steps == 0:
-        checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
-        saver.save(sess, checkpoint_path, global_step=step)
+        epochs = step * FLAGS.batch_size / FLAGS.num_examples
+        #if epochs < 1:
+        #  sess.run([opt_op_D])
+
+        duration = time.time() - start_time
+
+        if step % 10 == 0:
+          examples_per_sec = FLAGS.batch_size / float(duration)
+          print("Epochs: %.2f step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
+                  % (epochs, step, loss_D, loss_G, examples_per_sec, duration))
+          
+        if step % 200 == 0:
+          summary_str = sess.run(summary_op)
+          summary_writer.add_summary(summary_str, step)
+
+        # Save the model checkpoint periodically.
+        if step % FLAGS.save_steps == 0:
+          checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+          saver.save(sess, checkpoint_path, global_step=step)
 
     print('complete training...')
 
