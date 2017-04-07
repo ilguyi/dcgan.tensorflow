@@ -87,7 +87,9 @@ $ ./generate.sh batch_size (the number of images you want)
 
 ## Results
 ### celebA datasets
+<!--
 ![result](results/generated_images.gif)
+-->
 
 ## Author
   Il Gu Yi
