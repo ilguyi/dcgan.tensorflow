@@ -66,6 +66,13 @@ tf.app.flags.DEFINE_float('adam_epsilon',
                           1e-08,
                           'Epsilon term for the optimizer.')
 
+########################
+# Moving average decay #
+########################
+tf.app.flags.DEFINE_float('MOVING_AVERAGE_DECAY',
+                          0.9999,
+                          'Moving average decay.')
+
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -115,19 +122,37 @@ def main(_):
                 beta2=FLAGS.adam_beta2,
                 epsilon=FLAGS.adam_epsilon)
 
+    # Minimize optimizer
+    opt_op_D = opt_D.minimize(model.loss_Discriminator,
+                              global_step=global_step,
+                              var_list=model.D_vars)
+    opt_op_G = opt_G.minimize(model.loss_Generator,
+                              global_step=global_step,
+                              var_list=model.G_vars)
+
+    # Track the moving averages of all trainable variables.
+    # Note that we maintain a "double-average" of the BatchNormalization
+    # global statistics. This is more complicated then need be but we employ
+    # this for backward-compatibility with our previous models.
+    variable_averages = tf.train.ExponentialMovingAverage(
+        FLAGS.MOVING_AVERAGE_DECAY, global_step)
+
+    # Another possibility is to use tf.slim.get_variables().
+    variables_to_average = (tf.trainable_variables() +
+                            tf.moving_average_variables())
+    variables_averages_op = variable_averages.apply(variables_to_average)
+
     # Batch normalization update
     batchnorm_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     batchnorm_updates_op = tf.group(*batchnorm_updates)
 
+    train_op = tf.group(opt_op_D, opt_op_G, variables_averages_op,
+                        batchnorm_updates_op)
+
     # Add dependency to compute batchnorm_updates.
-    with tf.control_dependencies([batchnorm_updates_op]):
-      # Minimize optimizer
-      opt_op_D = opt_D.minimize(model.loss_Discriminator,
-                                global_step=global_step,
-                                var_list=model.D_vars)
-      opt_op_G = opt_G.minimize(model.loss_Generator,
-                                global_step=global_step,
-                                var_list=model.G_vars)
+    with tf.control_dependencies([variables_averages_op, batchnorm_updates_op]):
+      opt_op_D
+      opt_op_G
 
     # Compute the gradients for a list of variables.
     # grads_and_vars is a list of tuples (gradients, variables).
@@ -138,7 +163,7 @@ def main(_):
 
 
     # Set up the Saver for saving and restoring model checkpoints.
-    saver = tf.train.Saver(max_to_keep=1000)
+    saver = tf.train.Saver(tf.global_variables(), max_to_keep=1000)
 
 
     # Start running operations on the Graph.
@@ -165,9 +190,9 @@ def main(_):
 
       for step in range(FLAGS.max_steps+1):
         start_time = time.time()
-        _, _, loss_D, loss_G = sess.run([opt_op_D, opt_op_G,
-                                         model.loss_Discriminator,
-                                         model.loss_Generator])
+        _, loss_D, loss_G = sess.run([train_op,
+                                      model.loss_Discriminator,
+                                      model.loss_Generator])
 
         epochs = step * FLAGS.batch_size / FLAGS.num_examples
         #if epochs < 1:

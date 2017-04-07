@@ -43,6 +43,13 @@ tf.app.flags.DEFINE_integer('column_index',
                             0,
                             'The column index of random vector for linear interpolation.')
 
+########################
+# Moving average decay #
+########################
+tf.app.flags.DEFINE_float('MOVING_AVERAGE_DECAY',
+                          0.9999,
+                          'Moving average decay.')
+
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -138,9 +145,13 @@ def main(_):
     # Build the generative model.
     model = dcgan.DeepConvGANModel(mode="generate")
     model.build()
+    
+    # Restore the moving average version of the learned variables for image translate.
+    variable_averages = tf.train.ExponentialMovingAverage(FLAGS.MOVING_AVERAGE_DECAY)
+    variables_to_restore = variable_averages.variables_to_restore()
 
     # Set up the Saver for saving and restoring model checkpoints.
-    saver = tf.train.Saver()
+    saver = tf.train.Saver(variables_to_restore)
 
     if not FLAGS.make_gif:
       if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
