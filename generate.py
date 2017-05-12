@@ -20,7 +20,7 @@ slim = tf.contrib.slim
 ####################
 # Generating Flags #
 ####################
-tf.app.flags.DEFINE_string('checkpoint_path',
+tf.app.flags.DEFINE_string('checkpoint_dir',
                            '',
                            'Directory where to read model checkpoints.')
 tf.app.flags.DEFINE_integer('checkpoint_step',
@@ -135,13 +135,11 @@ def run_generator_once(saver, checkpoint_path, model, random_z):
 
 
 def main(_):
-  if not FLAGS.checkpoint_path:
-    raise ValueError('You must supply the checkpoint_path with --checkpoint_path')
+  if not FLAGS.checkpoint_dir:
+    raise ValueError('You must supply the checkpoint_dir with --checkpoint_dir')
 
 
   with tf.Graph().as_default():
-    start_time = time.time()
-
     # Build the generative model.
     model = dcgan.DeepConvGANModel(mode="generate")
     model.build()
@@ -153,21 +151,17 @@ def main(_):
     # Set up the Saver for saving and restoring model checkpoints.
     saver = tf.train.Saver(variables_to_restore)
 
-    if not FLAGS.make_gif:
-      if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
-        if FLAGS.checkpoint_step == -1:
-          checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_path)
-          checkpoint_step = int(checkpoint_path.split('-')[1])
-        else:
-          checkpoint_path = os.path.join(FLAGS.checkpoint_path, 'model.ckpt-%d' % FLAGS.checkpoint_step)
-          checkpoint_step = FLAGS.checkpoint_step
+    if not tf.gfile.IsDirectory(FLAGS.checkpoint_dir):
+      raise ValueError("checkpoint_dir must be folder path")
 
-        if os.path.basename(checkpoint_path) + '.data-00000-of-00001' in os.listdir(FLAGS.checkpoint_path):
-          print(os.path.basename(checkpoint_path))
-        else:
-          raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
+    if not FLAGS.make_gif:
+      if FLAGS.checkpoint_step == -1:
+        checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
       else:
-        raise ValueError("checkpoint_path must be folder path")
+        checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'model.ckpt-%d' % FLAGS.checkpoint_step)
+
+      if not os.path.basename(checkpoint_path) + '.data-00000-of-00001' in os.listdir(FLAGS.checkpoint_dir):
+        raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
 
 
       # Set fixed random vectors
@@ -186,31 +180,21 @@ def main(_):
       generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
       squared_images = make_squared_image(generated_images)
 
+      checkpoint_step = int(checkpoint_path.split('/')[-1].split('-')[-1])
       ImageWrite(squared_images, checkpoint_step)
 
     else:
       # Find all checkpoint_path
-      if tf.gfile.IsDirectory(FLAGS.checkpoint_path):
-        checkpoint_filenames = []
-        for filename in os.listdir(FLAGS.checkpoint_path):
-          if '.data-00000-of-00001' in filename:
-            filename = filename.split(".")[1].split("ckpt-")[1]
-            checkpoint_filenames.append(filename)
-      else:
-        raise ValueError("checkpoint_path must be folder path")
-
-      checkpoint_filenames.sort(key=int)
-      for i, filename in enumerate(checkpoint_filenames):
-        filename = 'model.ckpt-' + filename
-        checkpoint_filenames[i] = filename
+      ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
 
       # Set fixed random vectors
       np.random.seed(FLAGS.seed)
       random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 1, 1, 100])
 
       generated_gifs = []
-      for checkpoint_path in checkpoint_filenames:
-        checkpoint_path = os.path.join(FLAGS.checkpoint_path, checkpoint_path)
+      for checkpoint_path in ckpt.all_model_checkpoint_paths:
+        if not os.path.basename(checkpoint_path) + '.data-00000-of-00001' in os.listdir(FLAGS.checkpoint_dir):
+          raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
         generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
         squared_images = make_squared_image(generated_images)
         generated_gifs.append(squared_images)
