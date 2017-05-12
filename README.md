@@ -68,7 +68,7 @@ batch=$1
 
 #CUDA_VISIBLE_DEVICES=0 \
 python generate.py \
-    --checkpoint_path=${TRAIN_DIR} \
+    --checkpoint_dir=${TRAIN_DIR} \
     --checkpoint_step=-1 \
     --batch_size=$batch \
     --seed=12345 \
