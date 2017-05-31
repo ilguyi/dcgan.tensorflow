@@ -160,7 +160,7 @@ def main(_):
       else:
         checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'model.ckpt-%d' % FLAGS.checkpoint_step)
 
-      if not os.path.basename(checkpoint_path) + '.data-00000-of-00001' in os.listdir(FLAGS.checkpoint_dir):
+      if not os.path.exists(os.path.join(checkpoint_path + '.data-00000-of-00001')):
         raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
 
 
@@ -193,7 +193,7 @@ def main(_):
 
       generated_gifs = []
       for checkpoint_path in ckpt.all_model_checkpoint_paths:
-        if not os.path.basename(checkpoint_path) + '.data-00000-of-00001' in os.listdir(FLAGS.checkpoint_dir):
+        if not os.path.exists(os.path.join(checkpoint_path + '.data-00000-of-00001')):
           raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
         generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
         squared_images = make_squared_image(generated_images)
