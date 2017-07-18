@@ -9,7 +9,6 @@ TRAIN_DIR=$WORKING_DIR/dcgan.tensorflow/exp1
 # Where the dataset is saved to.
 DATASET_DIR=$WORKING_DIR/datasets/celebA/tfrecords
 
-
 CUDA_VISIBLE_DEVICES=0 \
 python train.py \
     --train_dir=${TRAIN_DIR} \

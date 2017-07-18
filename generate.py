@@ -5,50 +5,14 @@ from __future__ import print_function
 import os
 import numpy as np
 import time
-import copy
 import cv2
 
 import tensorflow as tf
 
-import image_processing
+import configuration
 import deep_convolutional_GAN_model as dcgan
 
-
 slim = tf.contrib.slim
-
-
-####################
-# Generating Flags #
-####################
-tf.app.flags.DEFINE_string('checkpoint_dir',
-                           '',
-                           'Directory where to read model checkpoints.')
-tf.app.flags.DEFINE_integer('checkpoint_step',
-                            -1,
-                            'The step you want to read model checkpoints.'
-                            '-1 means the latest model checkpoints.')
-tf.app.flags.DEFINE_integer('batch_size',
-                            32,
-                            'The number of samples in each batch.')
-tf.app.flags.DEFINE_integer('seed',
-                            0,
-                            'The seed number.')
-tf.app.flags.DEFINE_boolean('make_gif',
-                            False,
-                            'Whether make gif or not.')
-tf.app.flags.DEFINE_integer('save_steps',
-                            5000,
-                            'The step per saving model.')
-tf.app.flags.DEFINE_integer('column_index',
-                            0,
-                            'The column index of random vector for linear interpolation.')
-
-########################
-# Moving average decay #
-########################
-tf.app.flags.DEFINE_float('MOVING_AVERAGE_DECAY',
-                          0.9999,
-                          'Moving average decay.')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -105,8 +69,8 @@ def GIFWrite(generated_gifs, duration=4):
 #  clip = mpy.VideoClip(make_frame, duration=duration)
 #  clip.write_gif(filename, fps=len(generated_gifs)/duration)
 
-  for i, image in enumerate(generated_gifs):
-    ImageWrite(image, i*FLAGS.save_steps)
+  for image, step in generated_gifs:
+    ImageWrite(image, step)
   
 
 
@@ -138,6 +102,11 @@ def main(_):
   if not FLAGS.checkpoint_dir:
     raise ValueError('You must supply the checkpoint_dir with --checkpoint_dir')
 
+  # checkpoint_dir in each the combination of hyper-parameters
+  checkpoint_dir = configuration.hyperparameters_dir(FLAGS.checkpoint_dir)
+
+  if not tf.gfile.IsDirectory(checkpoint_dir):
+    raise ValueError('checkpoint_dir must be folder path')
 
   with tf.Graph().as_default():
     # Build the generative model.
@@ -154,38 +123,9 @@ def main(_):
     if not tf.gfile.IsDirectory(FLAGS.checkpoint_dir):
       raise ValueError("checkpoint_dir must be folder path")
 
-    if not FLAGS.make_gif:
-      if FLAGS.checkpoint_step == -1:
-        checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
-      else:
-        checkpoint_path = os.path.join(FLAGS.checkpoint_dir, 'model.ckpt-%d' % FLAGS.checkpoint_step)
-
-      if not os.path.exists(os.path.join(checkpoint_path + '.data-00000-of-00001')):
-        raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
-
-
-      # Set fixed random vectors
-      np.random.seed(FLAGS.seed)
-      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 1, 1, 100])
-
-      # Set random vector for linear interpolation
-      #random_z_one = np.random.uniform(-1, 1, [1, 100])
-      #random_z = random_z_one
-      #for i in range(FLAGS.batch_size-1):
-      #  random_z = np.concatenate((random_z, random_z_one), axis=0)
-
-      #linear_interpolation = np.linspace(-1.0, 1.0, num=FLAGS.batch_size)
-      #random_z[:, FLAGS.column_index] = linear_interpolation
-
-      generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
-      squared_images = make_squared_image(generated_images)
-
-      checkpoint_step = int(checkpoint_path.split('/')[-1].split('-')[-1])
-      ImageWrite(squared_images, checkpoint_step)
-
-    else:
-      # Find all checkpoint_path
-      ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
+    # Generate images for all checkpoints
+    if FLAGS.make_gif:
+      ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
 
       # Set fixed random vectors
       np.random.seed(FLAGS.seed)
@@ -194,12 +134,34 @@ def main(_):
       generated_gifs = []
       for checkpoint_path in ckpt.all_model_checkpoint_paths:
         if not os.path.exists(os.path.join(checkpoint_path + '.data-00000-of-00001')):
-          raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
+          raise ValueError("No checkpoint files found in: %s" % checkpoint_path)
+        print(checkpoint_path)
+
         generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
         squared_images = make_squared_image(generated_images)
-        generated_gifs.append(squared_images)
+        checkpoint_step = int(checkpoint_path.split('/')[-1].split('-')[-1])
+        generated_gifs.append((squared_images, checkpoint_step))
 
       GIFWrite(generated_gifs)
+
+    else:
+      if FLAGS.checkpoint_step == -1:
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+      else:
+        checkpoint_path = os.path.join(checkpoint_dir, 'model.ckpt-%d' % FLAGS.checkpoint_step)
+
+      if not os.path.exists(os.path.join(checkpoint_path + '.data-00000-of-00001')):
+        raise ValueError("No checkpoint file found in: %s" % checkpoint_path)
+
+      # Set fixed random vectors
+      np.random.seed(FLAGS.seed)
+      random_z = np.random.uniform(-1, 1, [FLAGS.batch_size, 1, 1, 100])
+
+      generated_images = run_generator_once(saver, checkpoint_path, model, random_z)
+      squared_images = make_squared_image(generated_images)
+
+      checkpoint_step = int(checkpoint_path.split('/')[-1].split('-')[-1])
+      ImageWrite(squared_images, checkpoint_step)
 
 
     print('complete generating image...')

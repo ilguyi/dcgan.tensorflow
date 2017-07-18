@@ -5,86 +5,50 @@ from __future__ import print_function
 import os
 import numpy as np
 import time
-import copy
 
 import tensorflow as tf
 
+import configuration
 import deep_convolutional_GAN_model as dcgan
 
 slim = tf.contrib.slim
 
-
-##################
-# Training Flags #
-##################
-tf.app.flags.DEFINE_string('train_dir',
-                           '',
-                           'Directory where checkpoints and event logs are written to.')
-tf.app.flags.DEFINE_integer('max_steps',
-                            10000,
-                            'The maximum number of training steps.')
-tf.app.flags.DEFINE_integer('save_steps',
-                            5000,
-                            'The step per saving model.')
-
-#################
-# Dataset Flags #
-#################
-tf.app.flags.DEFINE_string('dataset_dir',
-                           None,
-                           'The directory where the dataset files are stored.')
-tf.app.flags.DEFINE_integer('batch_size',
-                            32,
-                            'The number of samples in each batch.')
-tf.app.flags.DEFINE_integer('num_examples',
-                            100,
-                            'The number of samples in total dataset.')
-
-########################
-# Learning rate policy #
-########################
-tf.app.flags.DEFINE_float('initial_learning_rate',
-                          0.0001,
-                          'Initial learning rate.')
-tf.app.flags.DEFINE_float('num_epochs_per_decay',
-                          100,
-                          'Epochs after which learning rate decays.')
-tf.app.flags.DEFINE_float('learning_rate_decay_factor',
-                          0.5,
-                          'Learning rate decay factor.')
-
-######################
-# Optimization Flags #
-######################
-tf.app.flags.DEFINE_float('adam_beta1',
-                          0.9,
-                          'The exponential decay rate for the 1st moment estimates.')
-tf.app.flags.DEFINE_float('adam_beta2',
-                          0.999,
-                          'The exponential decay rate for the 2nd moment estimates.')
-tf.app.flags.DEFINE_float('adam_epsilon',
-                          1e-08,
-                          'Epsilon term for the optimizer.')
-
-########################
-# Moving average decay #
-########################
-tf.app.flags.DEFINE_float('MOVING_AVERAGE_DECAY',
-                          0.9999,
-                          'Moving average decay.')
-
 FLAGS = tf.app.flags.FLAGS
+
+
+def SetOptimizer(learning_rate, optimizer):
+  if FLAGS.optimizer == 'adadelta':
+    opt = tf.train.AdadeltaOptimizer(learning_rate)
+  elif FLAGS.optimizer == 'adagrad':
+    opt = tf.train.AdagradOptimizer(learning_rate)
+  elif FLAGS.optimizer == 'adam':
+    opt = tf.train.AdamOptimizer(learning_rate,
+                                 beta1=FLAGS.adam_beta1,
+                                 beta2=FLAGS.adam_beta2,
+                                 epsilon=FLAGS.adam_epsilon)
+  elif FLAGS.optimizer == 'ftrl':
+    opt = tf.train.FtrlOptimizer(learning_rate)
+  elif FLAGS.optimizer == 'rmsprop':
+    opt = tf.train.RMSPropOptimizer(learning_rate)
+  elif FLAGS.optimizer == 'momentum':
+    opt = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
+  elif FLAGS.optimizer == 'sgd':
+    opt = tf.train.GradientDescentOptimizer(learning_rate)
+  else:
+    raise ValueError('Optimizer [%s] was not recognized', FLAGS.optimizer)
+
+  return opt
 
 
 
 def main(_):
-  if not FLAGS.dataset_dir:
-    raise ValueError('You must supply the dataset directory with --dataset_dir')
 
-  if tf.gfile.Exists(FLAGS.train_dir):
+  # train_dir path in each the combination of hyper-parameters
+  train_dir = configuration.hyperparameters_dir(FLAGS.train_dir)
+
+  if tf.gfile.Exists(train_dir):
     raise ValueError('This folder already exists.')
-  tf.gfile.MakeDirs(FLAGS.train_dir)
-
+  tf.gfile.MakeDirs(train_dir)
 
   with tf.Graph().as_default():
 
@@ -109,18 +73,9 @@ def main(_):
     tf.summary.scalar('learning_rate', learning_rate)
 
     # Create an optimizer that performs gradient descent for Discriminator.
-    opt_D = tf.train.AdamOptimizer(
-                learning_rate,
-                beta1=FLAGS.adam_beta1,
-                beta2=FLAGS.adam_beta2,
-                epsilon=FLAGS.adam_epsilon)
-
-    # Create an optimizer that performs gradient descent for Discriminator.
-    opt_G = tf.train.AdamOptimizer(
-                learning_rate,
-                beta1=FLAGS.adam_beta1,
-                beta2=FLAGS.adam_beta2,
-                epsilon=FLAGS.adam_epsilon)
+    opt_D = SetOptimizer(learning_rate, FLAGS.optimizer)
+    # Create an optimizer that performs gradient descent for Generator.
+    opt_G = SetOptimizer(learning_rate, FLAGS.optimizer)
 
     # Minimize optimizer
     opt_op_D = opt_D.minimize(model.loss_Discriminator,
@@ -177,7 +132,7 @@ def main(_):
 
       # Create a summary writer, add the 'graph' to the event file.
       summary_writer = tf.summary.FileWriter(
-                          FLAGS.train_dir,
+                          train_dir,
                           sess.graph)
 
       # Retain the summaries
@@ -211,7 +166,7 @@ def main(_):
 
         # Save the model checkpoint periodically.
         if step % FLAGS.save_steps == 0:
-          checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+          checkpoint_path = os.path.join(train_dir, 'model.ckpt')
           saver.save(sess, checkpoint_path, global_step=step)
 
     print('complete training...')
