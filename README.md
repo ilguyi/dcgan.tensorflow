@@ -1,4 +1,4 @@
-# Deep Convolutional Generative Adversarial Networks with TensorFlow & slim
+# Deep Convolutional Generative Adversarial Networks with TensorFlow with tf.train.Supervisor
 ##  implementation based on http://arxiv.org/abs/1511.06434
   "Unsupervised Representation Learning with
   Deep Convolutional Generative Adversarial Networks",
@@ -8,7 +8,7 @@
 ![generator](results/dcgan_Generator.png)
 
 ## Requirements
-* TensorFlow 1.1.0 or greater(?)
+* TensorFlow 1.4.0 or greater(?)
 * opencv (for generate.py)
 * numpy
 

@@ -43,13 +43,6 @@ def SetOptimizer(learning_rate, optimizer):
 
 def main(_):
 
-  # train_dir path in each the combination of hyper-parameters
-  train_dir = configuration.hyperparameters_dir(FLAGS.train_dir)
-
-  if tf.gfile.Exists(train_dir):
-    raise ValueError('This folder already exists.')
-  tf.gfile.MakeDirs(train_dir)
-
   with tf.Graph().as_default():
 
     # Build the model.
@@ -57,19 +50,21 @@ def main(_):
     model.build()
 
     # Create global step
-    global_step = slim.create_global_step()
+    #global_step = tf.train.create_global_step()
 
     # Calculate the learning rate schedule.
     num_batches_per_epoch = (FLAGS.num_examples / FLAGS.batch_size)
     decay_steps = int(num_batches_per_epoch * FLAGS.num_epochs_per_decay)
 
     # Decay the learning rate exponentially based on the number of steps.
-    learning_rate = tf.train.exponential_decay(
-          FLAGS.initial_learning_rate,
-          global_step,
-          decay_steps=decay_steps,
-          decay_rate=FLAGS.learning_rate_decay_factor,
-          staircase=True)
+    learning_rate = tf.constant(FLAGS.initial_learning_rate)
+    def _learning_rate_decay_fn(learning_rate, global_step):
+      return tf.train.exponential_decay(
+                learning_rate,
+                global_step,
+                decay_steps=decay_steps,
+                decay_rate=FLAGS.learning_rate_decay_factor,
+                staircase=True)
     tf.summary.scalar('learning_rate', learning_rate)
 
     # Create an optimizer that performs gradient descent for Discriminator.
@@ -78,98 +73,89 @@ def main(_):
     opt_G = SetOptimizer(learning_rate, FLAGS.optimizer)
 
     # Minimize optimizer
-    opt_op_D = opt_D.minimize(model.loss_Discriminator,
-                              global_step=global_step,
+    # one training step is defined by both optimizers run once.
+    opt_D_op = opt_D.minimize(model.loss_Discriminator,
+                              global_step=model.global_step,
                               var_list=model.D_vars)
-    opt_op_G = opt_G.minimize(model.loss_Generator,
-                              global_step=global_step,
+    opt_G_op = opt_G.minimize(model.loss_Generator,
                               var_list=model.G_vars)
 
     # Track the moving averages of all trainable variables.
-    # Note that we maintain a "double-average" of the BatchNormalization
-    # global statistics. This is more complicated then need be but we employ
-    # this for backward-compatibility with our previous models.
     variable_averages = tf.train.ExponentialMovingAverage(
-        FLAGS.MOVING_AVERAGE_DECAY, global_step)
-
-    # Another possibility is to use tf.slim.get_variables().
-    variables_to_average = (tf.trainable_variables() +
-                            tf.moving_average_variables())
+        FLAGS.MOVING_AVERAGE_DECAY, model.global_step)
+    variables_to_average = tf.trainable_variables()
     variables_averages_op = variable_averages.apply(variables_to_average)
 
     # Batch normalization update
     batchnorm_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     batchnorm_updates_op = tf.group(*batchnorm_updates)
 
-    train_op = tf.group(opt_op_D, opt_op_G, variables_averages_op,
+    train_op = tf.group(opt_D_op, opt_G_op, variables_averages_op,
                         batchnorm_updates_op)
 
     # Add dependency to compute batchnorm_updates.
-    with tf.control_dependencies([variables_averages_op, batchnorm_updates_op]):
-      opt_op_D
-      opt_op_G
-
-    # Compute the gradients for a list of variables.
-    # grads_and_vars is a list of tuples (gradients, variables).
-#    grads_and_vars = opt.compute_gradients(model.total_loss)
-#
-#    # Apply the gradients
-#    apply_gradient_op = opt.apply_gradients(grads_and_vars)
+#    with tf.control_dependencies([variables_averages_op, batchnorm_updates_op]):
+#      # Minimize optimizer
+#      opt_D_op = opt_D.minimize(model.loss_Discriminator,
+#                                global_step=global_step,
+#                                var_list=model.D_vars)
+#      opt_G_op = opt_G.minimize(model.loss_Generator,
+#                                global_step=global_step,
+#                                var_list=model.G_vars)
 
 
     # Set up the Saver for saving and restoring model checkpoints.
     saver = tf.train.Saver(tf.global_variables(), max_to_keep=1000)
 
+    # train_dir path in each the combination of hyper-parameters
+    train_dir = configuration.hyperparameters_dir(FLAGS.train_dir)
 
+    # Training with tf.train.Supervisor.
+    sv = tf.train.Supervisor(logdir=train_dir,
+                             summary_op=None,     # Do not run the summary services
+                             saver=saver,
+                             save_model_secs=0,   # Do not run the save_model services
+                             init_fn=None)        # Not use pre-trained model
     # Start running operations on the Graph.
-    with tf.Session() as sess:
-      # Build an initialization operation to run below.
-      init = tf.global_variables_initializer()
-      sess.run(init)
+    with sv.managed_session() as sess:
+      tf.logging.info('Start Session.')
 
       # Start the queue runners.
-      tf.train.start_queue_runners(sess=sess)
+      sv.start_queue_runners(sess=sess)
+      tf.logging.info('Starting Queues.')
 
-      # Create a summary writer, add the 'graph' to the event file.
-      summary_writer = tf.summary.FileWriter(
-                          train_dir,
-                          sess.graph)
-
-      # Retain the summaries
-      #summaries = tf.get_collection(tf.GraphKeys.SUMMARIES)
-      # Build the summary operation
-      #summary_op = tf.summary.merge(summaries)
-
-      # Retain the summaries and Build the summary operation
-      summary_op = tf.summary.merge_all()
-
-      for step in range(FLAGS.max_steps+1):
+      # Run a model
+      for step in range(FLAGS.max_steps):
+        print(step)
         start_time = time.time()
-        _, loss_D, loss_G = sess.run([train_op,
-                                      model.loss_Discriminator,
-                                      model.loss_Generator])
+        if sv.should_stop():
+          break
 
-        epochs = step * FLAGS.batch_size / FLAGS.num_examples
-        #if epochs < 1:
-        #  sess.run([opt_op_D])
+        _, _global_step, loss_D, loss_G = sess.run([train_op,
+                                                    sv.global_step,
+                                                    model.loss_Discriminator,
+                                                    model.loss_Generator])
 
+        epochs = _global_step * FLAGS.batch_size / FLAGS.num_examples
         duration = time.time() - start_time
 
-        if step % 10 == 0:
+        # Monitoring training situation in console.
+        if _global_step % 10 == 0:
           examples_per_sec = FLAGS.batch_size / float(duration)
-          print("Epochs: %.2f step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
-                  % (epochs, step, loss_D, loss_G, examples_per_sec, duration))
+          print("Epochs: %.2f global step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
+                  % (epochs, _global_step, loss_D, loss_G, examples_per_sec, duration))
           
-        if step % 200 == 0:
+        # Save the model summaries periodically.
+        if _global_step % 200 == 0:
           summary_str = sess.run(summary_op)
-          summary_writer.add_summary(summary_str, step)
+          sv.summary_computed(sess, summary_str)
 
         # Save the model checkpoint periodically.
-        if step % FLAGS.save_steps == 0:
-          checkpoint_path = os.path.join(train_dir, 'model.ckpt')
-          saver.save(sess, checkpoint_path, global_step=step)
+        if _global_step % FLAGS.save_steps == 0:
+          tf.logging.info('Saving model with global step %d to disk.' % _global_step)
+          sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
 
-    print('complete training...')
+    tf.logging.info('complete training...')
 
 
 

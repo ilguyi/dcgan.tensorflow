@@ -9,6 +9,7 @@ import tensorflow as tf
 layers = tf.contrib.layers
 
 
+# deprecated: I change my function to official tf.nn.leaky_relu function.
 def leakyrelu(x, leaky_weight=0.2, name=None):
   """Computes leaky relu of `x` element-wise.
 

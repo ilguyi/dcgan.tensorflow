@@ -11,7 +11,6 @@ import tensorflow as tf
 import ops
 import image_processing
 
-slim = tf.contrib.slim
 layers = tf.contrib.layers
 arg_scope = tf.contrib.framework.arg_scope
 
@@ -30,18 +29,20 @@ class DeepConvGANModel(object):
 
   def __init__(self, mode):
     """Basic setup.
+
+      Args:
+        mode: "train" or "generate"
     """
     assert mode in ["train", "generate"]
     self.mode = mode
 
-    # A int32 scalar value;
+    # hyper-parameters for model
     self.random_z_size = 100
-
-    # A int32 scalar value;
     self.batch_size = FLAGS.batch_size
-
-    # A int32 scalar value;
     self.num_preprocess_threads = FLAGS.num_preprocess_threads
+
+    # Global step Tensor.
+    self.global_step = None
 
     print('The mode is %s.' % self.mode)
     print('complete initializing model.')
@@ -86,24 +87,7 @@ class DeepConvGANModel(object):
                       stride=[2, 2],
                       normalizer_fn=layers.batch_norm,
                       normalizer_params=batch_norm_params,
-                      weights_regularizer=layers.l2_regularizer(0.00004, scope='l2_decay')):
-
-        # project and reshape
-        # inputs=random_z: 100 dim
-        #self.projection = layers.fully_connected(inputs=random_z,
-        #                                         num_outputs=4*4*512,
-        #                                         activation_fn=None,
-        #                                         scope='projection')
-        # reshape: 4 x 4 x 512
-        #self.reshape = tf.reshape(self.projection, [-1, 4, 4, 512], name='reshape')
-        # layer1_batch_norm
-        #self.layer1_batch_norm = layers.batch_norm(self.reshape,
-        #                                           decay=0.999,
-        #                                           epsilon=0.001,
-        #                                           scope='layer1/batch_norm')
-        # layer1_relu
-        #self.layer1_relu = tf.nn.relu(self.layer1_batch_norm, 'layer1_relu')
-
+                      weights_regularizer=layers.l2_regularizer(0.0, scope='l2_decay')):
 
         # Use full conv2d_transpose instead of project and reshape
         # inputs = random_z: 1 x 1 x 100 dim
@@ -167,10 +151,10 @@ class DeepConvGANModel(object):
       with arg_scope([layers.conv2d],
                       kernel_size=[4, 4],
                       stride=[2, 2],
-                      activation_fn=ops.leakyrelu,
+                      activation_fn=tf.nn.leaky_relu,
                       normalizer_fn=layers.batch_norm,
                       normalizer_params=batch_norm_params,
-                      weights_regularizer=layers.l2_regularizer(0.00004, scope='l2_decay')):
+                      weights_regularizer=layers.l2_regularizer(0.0, scope='l2_decay')):
 
         # images: 64 x 64 x 3
         self.layer1 = layers.conv2d(inputs=images,
@@ -190,13 +174,7 @@ class DeepConvGANModel(object):
         self.layer4 = layers.conv2d(inputs=self.layer3,
                                     num_outputs=64 * 8,
                                     scope='layer4')
-        # reshape input: 4 x 4 x 512
-        #self.reshape = tf.reshape(self.layer4, [-1, 4*4*512], name='reshape')
-        # layer5 inputs: 4 x 4 x 512
-        #self.layer5 = layers.fully_connected(inputs=self.reshape,
-        #                                     num_outputs=1,
-        #                                     activation_fn=None,
-        #                                     scope='layer5')
+        # layer4: 4 x 4 x (64 * 8)
         self.layer5 = layers.conv2d(inputs=self.layer4,
                                     num_outputs=1,
                                     stride=[1, 1],
@@ -206,13 +184,28 @@ class DeepConvGANModel(object):
                                     activation_fn=None,
                                     scope='layer5')
 
+        # logits = layer5: 1
         discriminator_logits = self.layer5
 
         return discriminator_logits
 
 
+  def setup_global_step(self):
+    """Sets up the global step Tensor."""
+    if self.mode == "train":
+      self.global_step = tf.Variable(
+                            initial_value=0,
+                            name='global_step',
+                            trainable=False,
+                            collections=[tf.GraphKeys.GLOBAL_STEP, tf.GraphKeys.GLOBAL_VARIABLES])
+      
+      print('complete setup global_step.')
+
 
   def build(self):
+    """Creates all ops for training or generate."""
+    self.setup_global_step()
+
     # generating random vector
     random_z = self.build_random_z_inputs()
     
@@ -238,20 +231,26 @@ class DeepConvGANModel(object):
       # losses of fake with label "0"
       self.loss_fake = ops.GANLoss(logits=self.fake_logits, is_real=False)
 
+      # L2 regularization loss
+      l2_regularization_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+      l2_regularization_loss_D = [var for var in l2_regularization_loss if 'Discriminator' in var.name]
+      l2_regularization_loss_G = [var for var in l2_regularization_loss if 'Generator' in var.name]
+
       # losses of Discriminator
-      self.loss_Discriminator = self.loss_real + self.loss_fake
+      self.loss_Discriminator = self.loss_real + self.loss_fake + tf.reduce_sum(l2_regularization_loss_D)
 
       # losses of Generator with label "1"
-      self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True)
+      self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True) + tf.reduce_sum(l2_regularization_loss_G)
+
 
       # Separate variables for each function
       t_vars = tf.trainable_variables()
-      
       self.D_vars = [var for var in t_vars if 'Discriminator' in var.name]
       self.G_vars = [var for var in t_vars if 'Generator' in var.name]
 
       for var in self.G_vars:
         print(var.name)
+      print('\n')
       for var in self.D_vars:
         print(var.name)
 
@@ -273,6 +272,7 @@ class DeepConvGANModel(object):
       tf.summary.image('real_images', self.real_images, max_outputs=10)
 
     print('complete model build.')
+
 
 
   def visualize_Generator(self):
