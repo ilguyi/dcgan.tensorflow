@@ -64,6 +64,9 @@ tf.app.flags.DEFINE_float('adam_beta2',
 tf.app.flags.DEFINE_float('adam_epsilon',
                           1e-08,
                           'Epsilon term for the optimizer.')
+tf.app.flags.DEFINE_float('l2_decay',
+                          0.0004,
+                          'L2 regularization factor for the optimizer.')
 
 ########################
 # Moving average decay #
@@ -102,6 +105,7 @@ def hyperparameters_dir(input_dir):
   if FLAGS.optimizer == "adam":
     hp_dir = os.path.join(hp_dir, '%.1E' % FLAGS.adam_beta1)
   hp_dir = os.path.join(hp_dir, '%.1E' % FLAGS.initial_learning_rate)
+  hp_dir = os.path.join(hp_dir, '%.1E' % FLAGS.l2_decay)
   print(hp_dir)
 
   return hp_dir

@@ -40,7 +40,7 @@ class DeepConvGANModel(object):
     self.random_z_size = 100
     self.batch_size = FLAGS.batch_size
     self.num_preprocess_threads = FLAGS.num_preprocess_threads
-    self.l2_decay = 0.0004
+    self.l2_decay = FLAGS.l2_decay
 
     # Global step Tensor.
     self.global_step = None

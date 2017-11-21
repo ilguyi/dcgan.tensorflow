@@ -107,6 +107,9 @@ def main(_):
     # Set up the Saver for saving and restoring model checkpoints.
     saver = tf.train.Saver(tf.global_variables(), max_to_keep=1000)
 
+    # Build the summary operation
+    summary_op = tf.summary.merge_all()
+
     # train_dir path in each the combination of hyper-parameters
     train_dir = configuration.hyperparameters_dir(FLAGS.train_dir)
 
