@@ -125,8 +125,7 @@ def main(_):
       tf.logging.info('Starting Queues.')
 
       # Run a model
-      for step in range(FLAGS.max_steps):
-        print(step)
+      for _ in range(FLAGS.max_steps):
         start_time = time.time()
         if sv.should_stop():
           break

@@ -40,6 +40,7 @@ class DeepConvGANModel(object):
     self.random_z_size = 100
     self.batch_size = FLAGS.batch_size
     self.num_preprocess_threads = FLAGS.num_preprocess_threads
+    self.l2_decay = 0.0004
 
     # Global step Tensor.
     self.global_step = None
@@ -87,7 +88,7 @@ class DeepConvGANModel(object):
                       stride=[2, 2],
                       normalizer_fn=layers.batch_norm,
                       normalizer_params=batch_norm_params,
-                      weights_regularizer=layers.l2_regularizer(0.0, scope='l2_decay')):
+                      weights_regularizer=layers.l2_regularizer(self.l2_decay, scope='l2_decay')):
 
         # Use full conv2d_transpose instead of project and reshape
         # inputs = random_z: 1 x 1 x 100 dim
@@ -154,7 +155,7 @@ class DeepConvGANModel(object):
                       activation_fn=tf.nn.leaky_relu,
                       normalizer_fn=layers.batch_norm,
                       normalizer_params=batch_norm_params,
-                      weights_regularizer=layers.l2_regularizer(0.0, scope='l2_decay')):
+                      weights_regularizer=layers.l2_regularizer(self.l2_decay, scope='l2_decay')):
 
         # images: 64 x 64 x 3
         self.layer1 = layers.conv2d(inputs=images,
