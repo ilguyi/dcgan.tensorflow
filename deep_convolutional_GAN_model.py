@@ -217,6 +217,7 @@ class DeepConvGANModel(object):
     if self.mode == "train":
       # generating images from Generator() via random vector z
       self.generated_images = self.Generator(random_z)
+      self.sample_images = self.Generator(random_z, is_training=False)
 
       # randomly pick up real images from dataset (for celebA dataset)
       self.real_images = self.read_real_images_from_tfrecords()
@@ -233,9 +234,8 @@ class DeepConvGANModel(object):
       self.loss_fake = ops.GANLoss(logits=self.fake_logits, is_real=False)
 
       # L2 regularization loss
-      l2_regularization_loss = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-      l2_regularization_loss_D = [var for var in l2_regularization_loss if 'Discriminator' in var.name]
-      l2_regularization_loss_G = [var for var in l2_regularization_loss if 'Generator' in var.name]
+      l2_regularization_loss_D = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='Discriminator')
+      l2_regularization_loss_G = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='Generator')
 
       # losses of Discriminator
       self.loss_Discriminator = self.loss_real + self.loss_fake + tf.reduce_sum(l2_regularization_loss_D)
@@ -243,11 +243,10 @@ class DeepConvGANModel(object):
       # losses of Generator with label "1"
       self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True) + tf.reduce_sum(l2_regularization_loss_G)
 
-
       # Separate variables for each function
-      t_vars = tf.trainable_variables()
-      self.D_vars = [var for var in t_vars if 'Discriminator' in var.name]
-      self.G_vars = [var for var in t_vars if 'Generator' in var.name]
+      self.D_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
+      self.G_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
+
 
       for var in self.G_vars:
         print(var.name)
@@ -259,8 +258,8 @@ class DeepConvGANModel(object):
       # Add loss summaries
       tf.summary.scalar("losses/loss_Discriminator", self.loss_Discriminator)
       tf.summary.scalar("losses/loss_Generator", self.loss_Generator)
-      tf.summary.scalar("losses/loss_real", self.loss_real)
-      tf.summary.scalar("losses/loss_fake", self.loss_fake)
+      tf.summary.scalar("losses/loss_l2_regularization_D", tf.reduce_sum(l2_regularization_loss_D))
+      tf.summary.scalar("losses/loss_l2_regularization_G", tf.reduce_sum(l2_regularization_loss_G))
 
       # Add histogram summaries
       for var in self.D_vars:
@@ -269,8 +268,8 @@ class DeepConvGANModel(object):
         tf.summary.histogram(var.op.name, var)
 
       # Add image summaries
-      tf.summary.image('random_images', self.generated_images, max_outputs=10)
-      tf.summary.image('real_images', self.real_images, max_outputs=10)
+      tf.summary.image('random_images', self.sample_images, max_outputs=6)
+      tf.summary.image('real_images', self.real_images, max_outputs=6)
 
     print('complete model build.')
 
