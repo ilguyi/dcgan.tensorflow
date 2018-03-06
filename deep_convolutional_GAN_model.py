@@ -184,6 +184,7 @@ class DeepConvGANModel(object):
                                   stride=[1, 1],
                                   padding='VALID',
                                   activation_fn=None,
+                                  normalizer_fn=None,
                                   scope='layer5')
 
         # logits = layer5: 1
@@ -228,9 +229,9 @@ class DeepConvGANModel(object):
       self.fake_logits = self.Discriminator(self.generated_images, reuse=True)
 
       # losses of real with label "1"
-      self.loss_real = ops.GANLoss(logits=self.real_logits, is_real=True)
+      self.loss_real = ops.GANLoss(logits=self.real_logits, is_real=True, scope='loss_D_real')
       # losses of fake with label "0"
-      self.loss_fake = ops.GANLoss(logits=self.fake_logits, is_real=False)
+      self.loss_fake = ops.GANLoss(logits=self.fake_logits, is_real=False, scope='loss_D_fake')
 
       # L2 regularization loss
       l2_regularization_loss_D = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='Discriminator')
@@ -242,7 +243,7 @@ class DeepConvGANModel(object):
 
       # losses of Generator with label "1"
       with tf.variable_scope('loss_G'):
-        self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True) + tf.reduce_sum(l2_regularization_loss_G)
+        self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True, scope='loss_G_real') + tf.reduce_sum(l2_regularization_loss_G)
 
       # Separate variables for each function
       self.D_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
