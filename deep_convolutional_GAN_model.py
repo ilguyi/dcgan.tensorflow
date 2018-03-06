@@ -11,7 +11,7 @@ import tensorflow as tf
 import ops
 import image_processing
 
-layers = tf.contrib.layers
+slim = tf.contrib.slim
 arg_scope = tf.contrib.framework.arg_scope
 
 FLAGS = tf.app.flags.FLAGS
@@ -69,52 +69,56 @@ class DeepConvGANModel(object):
     return self.random_z
 
 
-  def Generator(self, random_z, is_training=True):
+  def Generator(self, random_z, is_training=True, reuse=False):
     """Generator setup.
 
     Args:
       random_z: A float32 Tensor random vector (latent code)
+      is_training: boolean whether training mode or generating mode
+      reuse: variable reuse flag
 
     Returns:
       A float32 scalar Tensor of generated images from random vector
     """
-    with tf.variable_scope('Generator'):
+    with tf.variable_scope('Generator') as scope:
+      if reuse:
+        scope.reuse_variables()
+
       batch_norm_params = {'decay': 0.999,
                            'epsilon': 0.001,
                            'is_training': is_training,
                            'scope': 'batch_norm'}
-      with arg_scope([layers.conv2d_transpose],
+      with arg_scope([slim.conv2d_transpose],
                       kernel_size=[4, 4],
                       stride=[2, 2],
-                      normalizer_fn=layers.batch_norm,
+                      normalizer_fn=slim.batch_norm,
                       normalizer_params=batch_norm_params,
-                      weights_regularizer=layers.l2_regularizer(self.l2_decay, scope='l2_decay')):
+                      weights_regularizer=slim.l2_regularizer(self.l2_decay, scope='l2_decay')):
 
         # Use full conv2d_transpose instead of project and reshape
         # inputs = random_z: 1 x 1 x 100 dim
-        self.layer1 = layers.conv2d_transpose(inputs=random_z,
-                                              num_outputs=64 * 8,
-                                              padding='VALID',
-                                              scope='layer1')
+        self.layer1 = slim.conv2d_transpose(inputs=random_z,
+                                            num_outputs=64 * 8,
+                                            padding='VALID',
+                                            scope='layer1')
         # layer1: 4 x 4 x (64 * 8)
-        self.layer2 = layers.conv2d_transpose(inputs=self.layer1,
-                                              num_outputs=64 * 4,
-                                              scope='layer2')
+        self.layer2 = slim.conv2d_transpose(inputs=self.layer1,
+                                            num_outputs=64 * 4,
+                                            scope='layer2')
         # layer2: 8 x 8 x (64 * 4)
-        self.layer3 = layers.conv2d_transpose(inputs=self.layer2,
-                                              num_outputs=64 * 2,
-                                              scope='layer3')
+        self.layer3 = slim.conv2d_transpose(inputs=self.layer2,
+                                            num_outputs=64 * 2,
+                                            scope='layer3')
         # layer3: 16 x 16 x (64 * 2)
-        self.layer4 = layers.conv2d_transpose(inputs=self.layer3,
-                                              num_outputs=64 * 1,
-                                              scope='layer4')
+        self.layer4 = slim.conv2d_transpose(inputs=self.layer3,
+                                            num_outputs=64 * 1,
+                                            scope='layer4')
         # layer4: 32 x 32 x (64 * 1)
-        self.layer5 = layers.conv2d_transpose(inputs=self.layer4,
-                                              num_outputs=3,
-                                              normalizer_fn=None,
-                                              biases_initializer=None,
-                                              activation_fn=tf.tanh,
-                                              scope='layer5')
+        self.layer5 = slim.conv2d_transpose(inputs=self.layer4,
+                                            num_outputs=3,
+                                            normalizer_fn=None,
+                                            activation_fn=tf.tanh,
+                                            scope='layer5')
         # output = layer5: 64 x 64 x 3
         generated_images = self.layer5
 
@@ -137,7 +141,7 @@ class DeepConvGANModel(object):
 
     Args:
       images: A float32 scalar Tensor of real images from data
-      reuse: reuse flag
+      reuse: variable reuse flag
 
     Returns:
       logits: A float32 scalar Tensor
@@ -149,41 +153,38 @@ class DeepConvGANModel(object):
       batch_norm_params = {'decay': 0.999,
                            'epsilon': 0.001,
                            'scope': 'batch_norm'}
-      with arg_scope([layers.conv2d],
+      with arg_scope([slim.conv2d],
                       kernel_size=[4, 4],
                       stride=[2, 2],
                       activation_fn=tf.nn.leaky_relu,
-                      normalizer_fn=layers.batch_norm,
+                      normalizer_fn=slim.batch_norm,
                       normalizer_params=batch_norm_params,
-                      weights_regularizer=layers.l2_regularizer(self.l2_decay, scope='l2_decay')):
+                      weights_regularizer=slim.l2_regularizer(self.l2_decay, scope='l2_decay')):
 
         # images: 64 x 64 x 3
-        self.layer1 = layers.conv2d(inputs=images,
-                                    num_outputs=64 * 1,
-                                    normalizer_fn=None,
-                                    biases_initializer=None,
-                                    scope='layer1')
+        self.layer1 = slim.conv2d(inputs=images,
+                                  num_outputs=64 * 1,
+                                  normalizer_fn=None,
+                                  scope='layer1')
         # layer1: 32 x 32 x (64 * 1)
-        self.layer2 = layers.conv2d(inputs=self.layer1,
-                                    num_outputs=64 * 2,
-                                    scope='layer2')
+        self.layer2 = slim.conv2d(inputs=self.layer1,
+                                  num_outputs=64 * 2,
+                                  scope='layer2')
         # layer2: 16 x 16 x (64 * 2)
-        self.layer3 = layers.conv2d(inputs=self.layer2,
-                                    num_outputs=64 * 4,
-                                    scope='layer3')
+        self.layer3 = slim.conv2d(inputs=self.layer2,
+                                  num_outputs=64 * 4,
+                                  scope='layer3')
         # layer3: 8 x 8 x (64 * 4)
-        self.layer4 = layers.conv2d(inputs=self.layer3,
-                                    num_outputs=64 * 8,
-                                    scope='layer4')
+        self.layer4 = slim.conv2d(inputs=self.layer3,
+                                  num_outputs=64 * 8,
+                                  scope='layer4')
         # layer4: 4 x 4 x (64 * 8)
-        self.layer5 = layers.conv2d(inputs=self.layer4,
-                                    num_outputs=1,
-                                    stride=[1, 1],
-                                    padding='VALID',
-                                    normalizer_fn=None,
-                                    normalizer_params=None,
-                                    activation_fn=None,
-                                    scope='layer5')
+        self.layer5 = slim.conv2d(inputs=self.layer4,
+                                  num_outputs=1,
+                                  stride=[1, 1],
+                                  padding='VALID',
+                                  activation_fn=None,
+                                  scope='layer5')
 
         # logits = layer5: 1
         discriminator_logits = self.layer5
@@ -217,14 +218,12 @@ class DeepConvGANModel(object):
     if self.mode == "train":
       # generating images from Generator() via random vector z
       self.generated_images = self.Generator(random_z)
-      self.sample_images = self.Generator(random_z, is_training=False)
 
       # randomly pick up real images from dataset (for celebA dataset)
       self.real_images = self.read_real_images_from_tfrecords()
 
       # discriminating real images by Discriminator()
       self.real_logits = self.Discriminator(self.real_images)
-
       # discriminating fake images (generated_images) by Discriminator()
       self.fake_logits = self.Discriminator(self.generated_images, reuse=True)
 
@@ -238,16 +237,23 @@ class DeepConvGANModel(object):
       l2_regularization_loss_G = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, scope='Generator')
 
       # losses of Discriminator
-      self.loss_Discriminator = self.loss_real + self.loss_fake + tf.reduce_sum(l2_regularization_loss_D)
+      with tf.variable_scope('loss_D'):
+        self.loss_Discriminator = self.loss_real + self.loss_fake + tf.reduce_sum(l2_regularization_loss_D)
 
       # losses of Generator with label "1"
-      self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True) + tf.reduce_sum(l2_regularization_loss_G)
+      with tf.variable_scope('loss_G'):
+        self.loss_Generator = ops.GANLoss(logits=self.fake_logits, is_real=True) + tf.reduce_sum(l2_regularization_loss_G)
 
       # Separate variables for each function
       self.D_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
       self.G_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
 
 
+      # Generating images for sampling
+      self.sample_images = self.Generator(random_z, is_training=False, reuse=True)
+
+
+      # Print all trainable variables
       for var in self.G_vars:
         print(var.name)
       print('\n')

@@ -15,11 +15,11 @@ import tensorflow as tf
 tf.app.flags.DEFINE_string('train_dir',
                            '',
                            'Directory where checkpoints and event logs are written to.')
-tf.app.flags.DEFINE_integer('max_steps',
-                            10000,
-                            'The maximum number of training steps.')
+tf.app.flags.DEFINE_integer('max_epochs',
+                            50,
+                            'The maximum number of training epochs.')
 tf.app.flags.DEFINE_integer('save_steps',
-                            5000,
+                            50000,
                             'The step per saving model.')
 
 #################
@@ -67,6 +67,10 @@ tf.app.flags.DEFINE_float('adam_epsilon',
 tf.app.flags.DEFINE_float('l2_decay',
                           0.0004,
                           'L2 regularization factor for the optimizer.')
+tf.app.flags.DEFINE_integer('k',
+                            1,
+                            'The number of step of learning D before learning G.')
+
 
 ########################
 # Moving average decay #

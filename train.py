@@ -11,7 +11,6 @@ import tensorflow as tf
 import configuration
 import deep_convolutional_GAN_model as dcgan
 
-slim = tf.contrib.slim
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -54,6 +53,7 @@ def main(_):
 
     # Calculate the learning rate schedule.
     num_batches_per_epoch = (FLAGS.num_examples / FLAGS.batch_size)
+    print("num_batches_per_epoch: %f" % num_batches_per_epoch)
     decay_steps = int(num_batches_per_epoch * FLAGS.num_epochs_per_decay)
 
     # Decay the learning rate exponentially based on the number of steps.
@@ -90,18 +90,17 @@ def main(_):
     batchnorm_updates = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     batchnorm_updates_op = tf.group(*batchnorm_updates)
 
-    train_op = tf.group(opt_D_op, opt_G_op, variables_averages_op,
-                        batchnorm_updates_op)
+#    train_op = tf.group(opt_D_op, opt_G_op, variables_averages_op,
+#                        batchnorm_updates_op)
 
     # Add dependency to compute batchnorm_updates.
-#    with tf.control_dependencies([variables_averages_op, batchnorm_updates_op]):
-#      # Minimize optimizer
-#      opt_D_op = opt_D.minimize(model.loss_Discriminator,
-#                                global_step=global_step,
-#                                var_list=model.D_vars)
-#      opt_G_op = opt_G.minimize(model.loss_Generator,
-#                                global_step=global_step,
-#                                var_list=model.G_vars)
+    with tf.control_dependencies([variables_averages_op, batchnorm_updates_op]):
+      # Minimize optimizer
+      opt_D_op = opt_D.minimize(model.loss_Discriminator,
+                                var_list=model.D_vars)
+      opt_G_op = opt_G.minimize(model.loss_Generator,
+                                global_step=model.global_step,
+                                var_list=model.G_vars)
 
 
     # Set up the Saver for saving and restoring model checkpoints.
@@ -128,34 +127,38 @@ def main(_):
       tf.logging.info('Starting Queues.')
 
       # Run a model
-      for _ in range(FLAGS.max_steps):
-        start_time = time.time()
-        if sv.should_stop():
-          break
+      num_batches_per_epoch = int(num_batches_per_epoch)
 
-        _, _global_step, loss_D, loss_G = sess.run([train_op,
-                                                    sv.global_step,
-                                                    model.loss_Discriminator,
-                                                    model.loss_Generator])
+      for epoch in range(FLAGS.max_epochs):
+        for j in range(int(num_batches_per_epoch)):
+          start_time = time.time()
+          if sv.should_stop():
+            break
 
-        epochs = _global_step * FLAGS.batch_size / FLAGS.num_examples
-        duration = time.time() - start_time
+          for _ in range(FLAGS.k):
+            _, loss_D = sess.run([opt_D_op, model.loss_Discriminator])
+          _, _global_step, loss_G = sess.run([opt_G_op,
+                                              sv.global_step,
+                                              model.loss_Generator])
 
-        # Monitoring training situation in console.
-        if _global_step % 10 == 0:
-          examples_per_sec = FLAGS.batch_size / float(duration)
-          print("Epochs: %.2f global step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
-                  % (epochs, _global_step, loss_D, loss_G, examples_per_sec, duration))
-          
-        # Save the model summaries periodically.
-        if _global_step % 200 == 0:
-          summary_str = sess.run(summary_op)
-          sv.summary_computed(sess, summary_str)
+          epochs = epoch + j / num_batches_per_epoch
+          duration = time.time() - start_time
 
-        # Save the model checkpoint periodically.
-        if _global_step % FLAGS.save_steps == 0:
-          tf.logging.info('Saving model with global step %d to disk.' % _global_step)
-          sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
+          # Monitoring training situation in console.
+          if _global_step % 10 == 0:
+            examples_per_sec = FLAGS.batch_size / float(duration)
+            print("Epochs: %.2f global step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
+                    % (epochs, _global_step, loss_D, loss_G, examples_per_sec, duration))
+            
+          # Save the model summaries periodically.
+          if _global_step % 200 == 0:
+            summary_str = sess.run(summary_op)
+            sv.summary_computed(sess, summary_str)
+
+          # Save the model checkpoint periodically.
+          if _global_step % FLAGS.save_steps == 0:
+            tf.logging.info('Saving model with global step %d to disk.' % _global_step)
+            sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
 
     tf.logging.info('complete training...')
 
