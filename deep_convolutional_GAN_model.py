@@ -93,6 +93,7 @@ class DeepConvGANModel(object):
                       stride=[2, 2],
                       normalizer_fn=slim.batch_norm,
                       normalizer_params=batch_norm_params,
+                      weights_initializer=tf.random_normal_initializer(stddev=0.02),
                       weights_regularizer=slim.l2_regularizer(self.l2_decay, scope='l2_decay')):
 
         # Use full conv2d_transpose instead of project and reshape
@@ -159,6 +160,7 @@ class DeepConvGANModel(object):
                       activation_fn=tf.nn.leaky_relu,
                       normalizer_fn=slim.batch_norm,
                       normalizer_params=batch_norm_params,
+                      weights_initializer=tf.random_normal_initializer(stddev=0.02),
                       weights_regularizer=slim.l2_regularizer(self.l2_decay, scope='l2_decay')):
 
         # images: 64 x 64 x 3
