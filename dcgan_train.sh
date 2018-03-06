@@ -19,7 +19,7 @@ python train.py \
     --batch_size=128 \
     --num_examples=202599 \
     --max_epochs=30 \
-    --save_steps=2000 \
+    --save_epochs=2 \
     --adam_beta1=0.5 \
 
     # celebA

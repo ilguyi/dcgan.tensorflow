@@ -16,11 +16,11 @@ tf.app.flags.DEFINE_string('train_dir',
                            '',
                            'Directory where checkpoints and event logs are written to.')
 tf.app.flags.DEFINE_integer('max_epochs',
-                            50,
-                            'The maximum number of training epochs.')
-tf.app.flags.DEFINE_integer('save_steps',
-                            50000,
-                            'The step per saving model.')
+                            30,
+                            'The maximum training epochs.')
+tf.app.flags.DEFINE_integer('save_epochs',
+                            2,
+                            'The epochs per saving model.')
 
 #################
 # Dataset Flags #

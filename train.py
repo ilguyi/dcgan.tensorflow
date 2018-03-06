@@ -13,6 +13,7 @@ import deep_convolutional_GAN_model as dcgan
 
 
 FLAGS = tf.app.flags.FLAGS
+tf.logging.set_verbosity(tf.logging.INFO)
 
 
 def SetOptimizer(learning_rate, optimizer):
@@ -154,8 +155,8 @@ def main(_):
             sv.summary_computed(sess, summary_str)
 
           # Save the model checkpoint periodically.
-          if _global_step % FLAGS.save_steps == 0:
-            tf.logging.info('Saving model with global step %d to disk.' % _global_step)
+          if epoch % FLAGS.save_epochs == 0  and  j == 0:
+            tf.logging.info('Saving model with global step %d (= %d epoch) to disk.' % (_global_step, epoch))
             sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
 
     tf.logging.info('complete training...')
