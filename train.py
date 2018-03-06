@@ -74,11 +74,11 @@ def main(_):
 
     # Minimize optimizer
     # one training step is defined by both optimizers run once.
-    opt_D_op = opt_D.minimize(model.loss_Discriminator,
-                              global_step=model.global_step,
-                              var_list=model.D_vars)
-    opt_G_op = opt_G.minimize(model.loss_Generator,
-                              var_list=model.G_vars)
+#    opt_D_op = opt_D.minimize(model.loss_Discriminator,
+#                              var_list=model.D_vars)
+#    opt_G_op = opt_G.minimize(model.loss_Generator,
+#                              global_step=model.global_step,
+#                              var_list=model.G_vars)
 
     # Track the moving averages of all trainable variables.
     variable_averages = tf.train.ExponentialMovingAverage(
@@ -127,8 +127,6 @@ def main(_):
       tf.logging.info('Starting Queues.')
 
       # Run a model
-      num_batches_per_epoch = int(num_batches_per_epoch)
-
       for epoch in range(FLAGS.max_epochs):
         for j in range(int(num_batches_per_epoch)):
           start_time = time.time()
@@ -147,7 +145,7 @@ def main(_):
           # Monitoring training situation in console.
           if _global_step % 10 == 0:
             examples_per_sec = FLAGS.batch_size / float(duration)
-            print("Epochs: %.2f global step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
+            print("Epochs: %.3f global step: %d  loss_D: %f loss_G: %f (%.1f examples/sec; %.3f sec/batch)"
                     % (epochs, _global_step, loss_D, loss_G, examples_per_sec, duration))
             
           # Save the model summaries periodically.
